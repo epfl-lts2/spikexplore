@@ -88,9 +88,9 @@ def random_subset(edges_df, balltype, mode, coeff, mode_value=None):
                 random_subset_size = min(nb_edges, 10)
                 logging.warning('Fallback used!')
         else:
-            raise Exception('the value must be between 0 and 100.')
+            raise ValueError('the value must be between 0 and 100.')
     else:
-        raise Exception('Unknown mode. Choose "constant" or "percent".')
+        raise ValueError('Unknown mode. Choose "constant" or "percent".')
     r_edges_idx = np.random.choice(edges_indices, random_subset_size, p=proba_f, replace=False)
     r_edges_df = edges_df.loc[r_edges_idx, :]
 
@@ -99,7 +99,7 @@ def random_subset(edges_df, balltype, mode, coeff, mode_value=None):
 
 
 def spiky_ball(initial_node_list, graph_handle, cfg,
-               node_acc=NodeInfo(), number_of_nodes=False):
+               node_acc=NodeInfo()):
     """ Sample the graph by exploring from an initial node list
     """
 
@@ -109,6 +109,7 @@ def spiky_ball(initial_node_list, graph_handle, cfg,
     max_nodes_per_hop = cfg['max_nodes_per_hop']
     balltype = cfg['balltype']
     coeff = cfg['coeff']
+    number_of_nodes = cfg.get('number_of_nodes', False)
 
     if graph_handle.rules:
         logging.debug('---')
@@ -141,7 +142,6 @@ def spiky_ball(initial_node_list, graph_handle, cfg,
                 new_node_list = new_node_list[:max_nodes]
                 new_edges = remove_edges_with_target_nodes(new_edges, new_node_list)
 
-        #edges_df, nodes_df, node_acc = get_node_info(graph_handle, new_node_list, node_acc)
         new_node_dic, edges_df, nodes_df, node_acc = process_hop(graph_handle, new_node_list, node_acc)
         if nodes_df.empty:
             break

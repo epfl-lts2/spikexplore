@@ -11,6 +11,8 @@ def create_graph(backend, nodes_df, edges_df, nodes_info, config):
 
 
 def explore(backend, initial_nodes, config):
+    if not initial_nodes:
+        raise ValueError('Cannot start without initial nodes.')
     nodes_list, nodes_df, edges_df, nodes_info = spiky_ball(initial_nodes,
                                                             backend,
                                                             config['collection_settings'],

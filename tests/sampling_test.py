@@ -11,6 +11,7 @@ class SyntheticGraphSamplingTest(unittest.TestCase):
         nodes = 5000
         edges_per_node = 5
         cls.G = nx.barabasi_albert_graph(nodes, edges_per_node)
+        cls.sampling_backend = SyntheticNetwork(cls.G)
         cls.sampling_config = {
             "collection_settings": {
                 "exploration_depth": 3,
@@ -27,8 +28,19 @@ class SyntheticGraphSamplingTest(unittest.TestCase):
         }
 
     def test_sampling_coreball(self):
-        sampling_backend = SyntheticNetwork(self.G)
-        g_sub = graph_explore.explore(sampling_backend, [1, 2], self.sampling_config)
+        g_sub = graph_explore.explore(self.sampling_backend, [1, 2], self.sampling_config)
         self.assertTrue(g_sub.number_of_nodes() > 50)
         self.assertTrue(g_sub.number_of_edges() > 100)
         self.assertTrue(nx.is_connected(g_sub.to_undirected()))
+
+    def test_sampling_coreball_numnodes(self):
+        cfg = self.sampling_config
+        cfg['collection_settings']['number_of_nodes'] = 100
+        cfg['collection_settings']['exploration_depth'] = 1000000
+        g_sub = graph_explore.explore(self.sampling_backend, [1, 2], self.sampling_config)
+        self.assertTrue(g_sub.number_of_nodes() == 100)
+        self.assertTrue(g_sub.number_of_edges() > 100)
+        self.assertTrue(nx.is_connected(g_sub.to_undirected()))
+
+    def test_sampling_args_validation(self):
+        self.assertRaises(ValueError, graph_explore.explore, self.sampling_backend, [], self.sampling_config)
