@@ -3,7 +3,8 @@ from spikexplore.collect_edges import spiky_ball
 
 
 def create_graph(backend, nodes_df, edges_df, nodes_info, config):
-    g = graph_from_edgeslist(edges_df, min_weight=config['min_weight'])
+    min_weight = config.get('min_weight', 1)
+    g = graph_from_edgeslist(edges_df, min_weight=min_weight)
     g = backend.add_graph_attributes(g, nodes_df, edges_df, nodes_info)
     g = reduce_graph(g, config['min_degree'])
     g = handle_spikyball_neighbors(g, backend)

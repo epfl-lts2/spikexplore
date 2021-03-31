@@ -1,4 +1,5 @@
 import unittest
+import copy
 import networkx as nx
 from spikexplore import graph_explore
 from spikexplore.backends.synthetic import SyntheticNetwork
@@ -34,13 +35,16 @@ class SyntheticGraphSamplingTest(unittest.TestCase):
         self.assertTrue(nx.is_connected(g_sub.to_undirected()))
 
     def test_sampling_coreball_numnodes(self):
-        cfg = self.sampling_config
+        cfg = copy.deepcopy(self.sampling_config)
         cfg['collection_settings']['number_of_nodes'] = 100
         cfg['collection_settings']['exploration_depth'] = 1000000
-        g_sub = graph_explore.explore(self.sampling_backend, [1, 2], self.sampling_config)
+        g_sub = graph_explore.explore(self.sampling_backend, [1, 2], cfg)
         self.assertTrue(g_sub.number_of_nodes() == 100)
         self.assertTrue(g_sub.number_of_edges() > 100)
         self.assertTrue(nx.is_connected(g_sub.to_undirected()))
 
     def test_sampling_args_validation(self):
         self.assertRaises(ValueError, graph_explore.explore, self.sampling_backend, [], self.sampling_config)
+        bad_cfg = copy.deepcopy(self.sampling_config)
+        bad_cfg['collection_settings']['exploration_depth'] = 0
+        self.assertRaises(ValueError, graph_explore.explore, self.sampling_backend, [1, 2, 3], bad_cfg)

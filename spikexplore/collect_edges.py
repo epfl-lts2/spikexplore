@@ -110,6 +110,8 @@ def spiky_ball(initial_node_list, graph_handle, cfg,
     balltype = cfg['balltype']
     coeff = cfg['coeff']
     number_of_nodes = cfg.get('number_of_nodes', False)
+    if exploration_depth <= 1:
+        raise ValueError('Exploration depth must be > 0.')
 
     if graph_handle.rules:
         logging.debug('---')
