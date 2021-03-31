@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 import os
 import logging
-from . import NodeInfo
-from .graph import process_hop
+from spikexplore.NodeInfo import NodeInfo
+from spikexplore.graph import process_hop
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)

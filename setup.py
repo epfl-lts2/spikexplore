@@ -2,13 +2,13 @@ from setuptools import setup
 
 setup(
     name='spikexplore',
-    version='0.0.1',
+    version='0.0.2',
     description='Graph exploration using inhomogeneous filtered diffusion',
     url='https://github.com/epfl-lts2/spikexplore',
     author='Nicolas Aspert, Benjamin Ricaud',
     author_email='nicolas.aspert@epfl.ch, benjamin.ricaud@epfl.ch',
     license='Apache license',
-    packages=['spikexplore'],
+    packages=['spikexplore', 'spikexplore.backends'],
     scripts=[],
     install_requires=['pandas',
                       'numpy',

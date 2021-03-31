@@ -1,13 +1,12 @@
-import graph
-from .collect_edges import spiky_ball
+from spikexplore.graph import graph_from_edgeslist, reduce_graph, handle_spikyball_neighbors
+from spikexplore.collect_edges import spiky_ball
 
 
 def create_graph(backend, nodes_df, edges_df, nodes_info, config):
-    g = graph.graph_from_edgeslist(edges_df, min_weight=config['min_weight'])
-    g = graph.add_edges_attributes(g, edges_df, drop_cols=['tweet_id', 'degree_target', 'degree_source'])
-    g = graph.add_node_attributes(g, backend.reshape_node_data(nodes_df), attr_dic=nodes_info, attr_name='all_hashtags')
-    g = graph.reduce_graph(g, config['min_degree'])
-    g = graph.handle_spikyball_neighbors(g, backend)
+    g = graph_from_edgeslist(edges_df, min_weight=config['min_weight'])
+    g = backend.add_graph_attributes(g, nodes_df, edges_df, nodes_info)
+    g = reduce_graph(g, config['min_degree'])
+    g = handle_spikyball_neighbors(g, backend)
     return g
 
 

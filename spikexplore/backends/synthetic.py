@@ -3,6 +3,7 @@ import pandas as pd
 from spikexplore.NodeInfo import NodeInfo
 from spikexplore.graph import add_node_attributes, add_edges_attributes
 
+
 class SyntheticNetwork:
 	class SynthNodeInfo(NodeInfo):
 		def __init__(self, nodes=pd.DataFrame()):
