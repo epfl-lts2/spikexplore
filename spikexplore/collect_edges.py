@@ -6,7 +6,6 @@ from spikexplore.NodeInfo import NodeInfo
 from spikexplore.graph import process_hop
 
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
 
 
 def split_edges(edges_df, node_list):
@@ -34,18 +33,18 @@ def degree_weight(node_type, edges_df):
     return degree_vec, edges_df
 
 
-def probability_function(edges_df, balltype, coeff):
+def probability_function(edges_df, expansion_type, degree):
     # Taking the weights into account for the random selection
-    if balltype == 'spikyball':
-        source_coeff, edge_coeff, target_coeff = 0, 1, 0
-    elif balltype == 'hubball':
-        source_coeff,  edge_coeff, target_coeff = coeff, 1, 0
-    elif balltype == 'coreball':
-        source_coeff, edge_coeff, target_coeff = 0, 1, coeff
-    elif balltype == 'fireball':
-        source_coeff, edge_coeff, target_coeff = -1, 1, 0
-    elif balltype == 'firecoreball':
-        source_coeff, edge_coeff, target_coeff = -1, 1, coeff        
+    if expansion_type == 'spikyball':
+        source_degree, edge_degree, target_degree = 0, 1, 0
+    elif expansion_type == 'hubball':
+        source_degree,  edge_degree, target_degree = degree, 1, 0
+    elif expansion_type == 'coreball':
+        source_degree, edge_degree, target_degree = 0, 1, degree
+    elif expansion_type == 'fireball':
+        source_degree, edge_degree, target_degree = -1, 1, 0
+    elif expansion_type == 'firecoreball':
+        source_degree, edge_degree, target_degree = -1, 1, degree
     else:
         raise ValueError('Unknown ball type.')
 
@@ -53,9 +52,9 @@ def probability_function(edges_df, balltype, coeff):
     target_degree_vec, edges_df = degree_weight('target', edges_df)
     source_degree_vec, edges_df = degree_weight('source', edges_df)
 
-    source_func = source_degree_vec.astype(float) ** source_coeff 
-    weight_func = weight_vec.astype(float) ** edge_coeff
-    target_func = target_degree_vec.astype(float) ** target_coeff
+    source_func = source_degree_vec.astype(float) ** source_degree
+    weight_func = weight_vec.astype(float) ** edge_degree
+    target_func = target_degree_vec.astype(float) ** target_degree
     proba_unormalized = source_func * weight_func * target_func
     proba_f = proba_unormalized / np.sum(proba_unormalized)  # Normalize weights
     
@@ -103,13 +102,13 @@ def spiky_ball(initial_node_list, graph_handle, cfg,
     """ Sample the graph by exploring from an initial node list
     """
 
-    exploration_depth = cfg['exploration_depth']
-    mode = cfg['mode']
-    random_subset_size = cfg['random_subset_size']
-    max_nodes_per_hop = cfg['max_nodes_per_hop']
-    balltype = cfg['balltype']
-    coeff = cfg['coeff']
-    number_of_nodes = cfg.get('number_of_nodes', False)
+    exploration_depth = cfg.exploration_depth
+    random_subset_mode = cfg.random_subset_mode
+    random_subset_size = cfg.random_subset_size
+    max_nodes_per_hop = cfg.max_nodes_per_hop
+    expansion_type = cfg.expansion_type
+    degree = cfg.degree
+    number_of_nodes = cfg.number_of_nodes
     if exploration_depth <= 1:
         raise ValueError('Exploration depth must be > 0.')
 
@@ -158,8 +157,8 @@ def spiky_ball(initial_node_list, graph_handle, cfg,
         # add the edges linking the new nodes
         total_edges_df = total_edges_df.append(new_edges)
         
-        new_node_list, new_edges = random_subset(edges_df_out, balltype, mode=mode,
-                                                 mode_value=random_subset_size, coeff=coeff)
+        new_node_list, new_edges = random_subset(edges_df_out, expansion_type, mode=random_subset_mode,
+                                                 mode_value=random_subset_size, coeff=degree)
         logging.debug('new edges:{} subset:{} in_edges:{}'.format(len(edges_df_out), len(new_edges), len(edges_df_in)))
 
     logging.debug('Nb of layers reached: {}'.format(depth))
