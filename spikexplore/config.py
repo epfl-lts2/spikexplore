@@ -10,7 +10,7 @@ class GraphConfig:
 @dataclass
 class DataCollectionConfig:
     exploration_depth: int = 3
-    mode: str = "percent"
+    random_subset_mode: str = "percent"
     random_subset_size: int = 20
     expansion_type: str = "coreball"
     degree: int = 2

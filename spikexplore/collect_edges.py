@@ -6,7 +6,6 @@ from spikexplore.NodeInfo import NodeInfo
 from spikexplore.graph import process_hop
 
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
 
 
 def split_edges(edges_df, node_list):
@@ -104,7 +103,7 @@ def spiky_ball(initial_node_list, graph_handle, cfg,
     """
 
     exploration_depth = cfg.exploration_depth
-    mode = cfg.mode
+    random_subset_mode = cfg.random_subset_mode
     random_subset_size = cfg.random_subset_size
     max_nodes_per_hop = cfg.max_nodes_per_hop
     expansion_type = cfg.expansion_type
@@ -158,7 +157,7 @@ def spiky_ball(initial_node_list, graph_handle, cfg,
         # add the edges linking the new nodes
         total_edges_df = total_edges_df.append(new_edges)
         
-        new_node_list, new_edges = random_subset(edges_df_out, expansion_type, mode=mode,
+        new_node_list, new_edges = random_subset(edges_df_out, expansion_type, mode=random_subset_mode,
                                                  mode_value=random_subset_size, coeff=degree)
         logging.debug('new edges:{} subset:{} in_edges:{}'.format(len(edges_df_out), len(new_edges), len(edges_df_in)))
 

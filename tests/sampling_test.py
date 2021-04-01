@@ -15,7 +15,7 @@ class SyntheticGraphSamplingTest(unittest.TestCase):
         cls.G = nx.barabasi_albert_graph(nodes, edges_per_node)
         cls.sampling_backend = SyntheticNetwork(cls.G)
         graph_config = GraphConfig(min_degree=1, min_weight=1)
-        data_collection_config = DataCollectionConfig(exploration_depth=3, mode="percent",
+        data_collection_config = DataCollectionConfig(exploration_depth=3, random_subset_mode="percent",
                                                       random_subset_size=20, expansion_type="coreball",
                                                       degree=2, max_nodes_per_hop=1000)
         cls.sampling_config = SamplingConfig(graph_config, data_collection_config)
@@ -44,5 +44,5 @@ class SyntheticGraphSamplingTest(unittest.TestCase):
         bad_cfg.data_collection.expansion_type = "unknown"
         self.assertRaises(ValueError, graph_explore.explore, self.sampling_backend, [1, 2, 3], bad_cfg)
         bad_cfg.data_collection.expansion_type = "fireball"
-        bad_cfg.data_collection.mode = "invalid"
+        bad_cfg.data_collection.random_subset_mode = "invalid"
         self.assertRaises(ValueError, graph_explore.explore, self.sampling_backend, [1, 2, 3], bad_cfg)
