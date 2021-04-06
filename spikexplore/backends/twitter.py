@@ -22,15 +22,12 @@ class TwitterNetwork:
         def get_nodes(self):
             return self.tweets_meta
 
-    def __init__(self, credentials):
+    def __init__(self, credentials, config):
         # Instantiate an object
         self.consumer_key = credentials['CONSUMER_KEY']
         self.consumer_secret = credentials['CONSUMER_SECRET']
         self.twitter_handle = Twython(self.consumer_key, self.consumer_secret)
-        self.rules = {
-            'min_mentions': 0, 'max_day_old': None, 'max_tweets_per_user': 200, 'nb_popular_tweets': 10,
-            'users_to_remove': []
-        }
+        self.config = config
 
     def get_node_info(self):
         return self.TwitterNodeInfo()
@@ -58,7 +55,7 @@ class TwitterNetwork:
         # filter edges according to their properties
         if edges_df.empty:
             return edges_df
-        return edges_df[edges_df['weight'] >= self.rules['min_mentions']]
+        return edges_df[edges_df['weight'] >= self.config.min_mentions]
 
     def neighbors_list(self, edges_df):
         if edges_df.empty:
@@ -75,7 +72,7 @@ class TwitterNetwork:
     ###############################################################
 
     def filter_old_tweets(self, tweets):
-        max_day_old = self.rules['max_day_old']
+        max_day_old = self.config.max_day_old
         if not max_day_old:
             return tweets
 
@@ -87,7 +84,7 @@ class TwitterNetwork:
     def get_user_tweets(self, username):
         # Collect tweets from a username
 
-        count = self.rules['max_tweets_per_user']
+        count = self.config.max_tweets_per_user
 
         # Test if ok
         try:
@@ -149,7 +146,7 @@ class TwitterNetwork:
         # Create the user -> mention table with their properties fom the list of tweets of a user
         meta_df = pd.DataFrame.from_dict(tweets_meta, orient='index').explode('mentions').dropna()
         # Some bots to be removed from the collection
-        users_to_remove = self.rules['users_to_remove']
+        users_to_remove = self.config.users_to_remove
 
         filtered_meta_df = meta_df[~meta_df['mentions'].isin(users_to_remove) &
                                    ~meta_df['mentions'].isin(meta_df['user'])]
@@ -165,7 +162,7 @@ class TwitterNetwork:
     def get_nodes_properties(self, tweets_meta, tweets_dic):
         if not tweets_meta:
             return self.TwitterNodeInfo({}, {}, pd.DataFrame())
-        nb_popular_tweets = self.rules['nb_popular_tweets']
+        nb_popular_tweets = self.config.nb_popular_tweets
         # global properties
         meta_df = pd.DataFrame.from_dict(tweets_meta, orient='index') \
             .sort_values('retweet_count', ascending=False)

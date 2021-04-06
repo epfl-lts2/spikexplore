@@ -15,10 +15,10 @@ class SyntheticNetwork:
 		def get_nodes(self):
 			return self.nodes
 
-	def __init__(self, g):
+	def __init__(self, g, config):
 		# Instantiate an object
 		self.G = g
-		self.rules = {'min_degree': 1}
+		self.config = config
 
 	def get_node_info(self):
 		return self.SynthNodeInfo()
@@ -46,7 +46,7 @@ class SyntheticNetwork:
 		return self.SynthNodeInfo(node_df), edges_df
 
 	def filter(self, node_info, edges_df):
-		if len(edges_df) < self.rules['min_degree']:
+		if len(edges_df) < self.config.min_degree:
 			# discard the node
 			node_info = self.SynthNodeInfo(pd.DataFrame())
 			edges_df = pd.DataFrame()

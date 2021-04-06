@@ -3,7 +3,7 @@ import copy
 import networkx as nx
 from spikexplore import graph_explore
 from spikexplore.backends.synthetic import SyntheticNetwork
-from spikexplore.config import SamplingConfig, GraphConfig, DataCollectionConfig
+from spikexplore.config import SamplingConfig, GraphConfig, DataCollectionConfig, SyntheticConfig
 
 
 class SyntheticGraphSamplingTest(unittest.TestCase):
@@ -12,8 +12,9 @@ class SyntheticGraphSamplingTest(unittest.TestCase):
     def setUpClass(cls):
         nodes = 5000
         edges_per_node = 5
+        cls.config = SyntheticConfig()
         cls.G = nx.barabasi_albert_graph(nodes, edges_per_node)
-        cls.sampling_backend = SyntheticNetwork(cls.G)
+        cls.sampling_backend = SyntheticNetwork(cls.G, cls.config)
         graph_config = GraphConfig(min_degree=1, min_weight=1)
         data_collection_config = DataCollectionConfig(exploration_depth=3, random_subset_mode="percent",
                                                       random_subset_size=20, expansion_type="coreball",
@@ -45,4 +46,7 @@ class SyntheticGraphSamplingTest(unittest.TestCase):
         self.assertRaises(ValueError, graph_explore.explore, self.sampling_backend, [1, 2, 3], bad_cfg)
         bad_cfg.data_collection.expansion_type = "fireball"
         bad_cfg.data_collection.random_subset_mode = "invalid"
+        self.assertRaises(ValueError, graph_explore.explore, self.sampling_backend, [1, 2, 3], bad_cfg)
+        bad_cfg.data_collection.random_subset_mode = "percent"
+        bad_cfg.data_collection.random_subset_size = 102
         self.assertRaises(ValueError, graph_explore.explore, self.sampling_backend, [1, 2, 3], bad_cfg)

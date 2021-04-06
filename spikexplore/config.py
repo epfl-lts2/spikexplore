@@ -26,3 +26,17 @@ class SamplingConfig:
     def __init__(self, graph, data_collection):
         self.graph = graph
         self.data_collection = data_collection
+
+
+@dataclass
+class TwitterConfig:
+    min_mentions: int = 0
+    max_day_old: int = 30
+    max_tweets_per_user: int = 200
+    nb_popular_tweets: int = 10
+    users_to_remove = []
+
+
+@dataclass
+class SyntheticConfig:
+    min_degree: int = 1
