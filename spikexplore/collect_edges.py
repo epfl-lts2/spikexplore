@@ -112,13 +112,6 @@ def spiky_ball(initial_node_list, graph_handle, cfg,
     if exploration_depth <= 1:
         raise ValueError('Exploration depth must be > 0.')
 
-    if graph_handle.rules:
-        logging.debug('---')
-        logging.debug('Parameters:')
-        for key, value in graph_handle.rules.items():
-            logging.debug('{}: {}'.format(key, value))
-        logging.debug('---')
-
     # Initialization
     new_node_list = initial_node_list.copy()
     total_node_list = []  # new_node_list
