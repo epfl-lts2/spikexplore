@@ -24,6 +24,6 @@ jobs:
     - name: Run tests
       env:
         TWITTER_CONSUMER_KEY: ${{ secrets.TWITTER_CONSUMER_KEY }}
-        TWITTER_SECRET_KEY: ${{ secrets.TWITTER_SECRET_KEY }}
+        TWITTER_CONSUMER_SECRET: ${{ secrets.TWITTER_CONSUMER_SECRET }}
       run: |
         python -m pytest tests
