@@ -102,31 +102,31 @@ def process_hop(graph_handle, node_list, nodes_info_acc):
     return new_node_dic, total_edges_df, total_nodes_df, nodes_info_acc
 
 
-def handle_spikyball_neighbors(G, graph_handle, remove=True, node_acc=None):
+def handle_spikyball_neighbors(graph, backend, remove=True, node_acc=None):
     # Complete the info of the nodes not collected
-    sp_neighbors = [node for node, data in G.nodes(data=True) if 'spikyball_hop' not in data]
+    sp_neighbors = [node for node, data in graph.nodes(data=True) if 'spikyball_hop' not in data]
     logging.info('Number of neighbors of the spiky ball: {}'.format(len(sp_neighbors)))
 
     # 2 options: 1) remove the neighbors or 2) rerun the collection to collect the missing node info
     if remove:
         # Option 1:
         logging.info('Removing spiky ball neighbors...')
-        G.remove_nodes_from(sp_neighbors)
-        logging.info('Number of nodes after removal: {}'.format(G.number_of_nodes()))
+        graph.remove_nodes_from(sp_neighbors)
+        logging.info('Number of nodes after removal: {}'.format(graph.number_of_nodes()))
     else:
         # TODO this needs checking
         # Option 2: collect the missing node data
         logging.info('Collecting info for neighbors...')
-        new_nodes_founds, edges_df, nodes_df, node_acc = process_hop(graph_handle, sp_neighbors, node_acc)
-        G = add_node_attributes(G, nodes_df)
+        new_nodes_founds, edges_df, nodes_df, node_acc = process_hop(backend, sp_neighbors, node_acc)
+        graph = add_node_attributes(graph, nodes_df)
         sp_nodes_dic = {node: -1 for node in sp_neighbors}
-        nx.set_node_attributes(G, sp_nodes_dic, name='spikyball_hop')
+        nx.set_node_attributes(graph, sp_nodes_dic, name='spikyball_hop')
         logging.info('Node info added to the graph.')
     # Check integrity
-    for node, data in G.nodes(data=True):
+    for node, data in graph.nodes(data=True):
         if 'spikyball_hop' not in data:
             logging.error('Missing information for node ', node)
-    return G
+    return graph
 
 
 def compute_meantime(date_list):

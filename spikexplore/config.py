@@ -40,3 +40,10 @@ class TwitterConfig:
 @dataclass
 class SyntheticConfig:
     min_degree: int = 1
+
+
+@dataclass
+class WikipediaConfig:
+    lang: str = 'en'
+    pages_ignored = []
+
