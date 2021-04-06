@@ -46,3 +46,6 @@ class SyntheticGraphSamplingTest(unittest.TestCase):
         bad_cfg.data_collection.expansion_type = "fireball"
         bad_cfg.data_collection.random_subset_mode = "invalid"
         self.assertRaises(ValueError, graph_explore.explore, self.sampling_backend, [1, 2, 3], bad_cfg)
+        bad_cfg.data_collection.random_subset_mode = "percent"
+        bad_cfg.data_collection.random_subset_size = 102
+        self.assertRaises(ValueError, graph_explore.explore, self.sampling_backend, [1, 2, 3], bad_cfg)
