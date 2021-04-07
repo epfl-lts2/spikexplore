@@ -35,7 +35,7 @@ class WikipediaGraphSampling(unittest.TestCase):
         cls.sampling_backend = WikipediaNetwork(cls.wiki_config)
         graph_config = GraphConfig(min_degree=1, min_weight=1)
         data_collection_config = DataCollectionConfig(exploration_depth=2, random_subset_mode="percent",
-                                                      random_subset_size=5, expansion_type="coreball",
+                                                      random_subset_size=10, expansion_type="coreball",
                                                       degree=2, max_nodes_per_hop=100)
         cls.sampling_config = SamplingConfig(graph_config, data_collection_config)
         cls.initial_nodes = ['Albert Einstein', 'Quantum mechanics', 'Theory of relativity']
@@ -43,6 +43,6 @@ class WikipediaGraphSampling(unittest.TestCase):
     def test_sampling_coreball(self):
         g_sub = graph_explore.explore(self.sampling_backend, self.initial_nodes, self.sampling_config)
         self.assertTrue(g_sub.number_of_nodes() > 100)
-        self.assertTrue(g_sub.number_of_edges() > 1000)
+        self.assertTrue(g_sub.number_of_edges() > 700)
         self.assertTrue(nx.is_connected(g_sub))
         self.assertTrue(set(g_sub.nodes()).intersection(self.wiki_config.pages_ignored) == set())
