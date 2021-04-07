@@ -24,9 +24,8 @@ class TwitterGraphSampling(unittest.TestCase):
         cls.sampling_config = SamplingConfig(graph_config, data_collection_config)
         cls.initial_nodes = ['github', 'GitHubHelp', 'GitHubSecurity', 'GitHubEducation']
 
-
     def test_sampling_coreball(self):
         g_sub = graph_explore.explore(self.sampling_backend, self.initial_nodes, self.sampling_config)
         self.assertTrue(g_sub.number_of_nodes() > 5)
         self.assertTrue(g_sub.number_of_edges() > 10)
-        self.assertTrue(nx.is_connected(g_sub.to_undirected()))
+        self.assertTrue(nx.is_connected(g_sub))

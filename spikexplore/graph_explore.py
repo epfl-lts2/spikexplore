@@ -1,5 +1,6 @@
 from spikexplore.graph import graph_from_edgeslist, reduce_graph, handle_spikyball_neighbors
 from spikexplore.collect_edges import spiky_ball
+import networkx as nx
 
 
 def create_graph(backend, nodes_df, edges_df, nodes_info, config):
@@ -7,8 +8,13 @@ def create_graph(backend, nodes_df, edges_df, nodes_info, config):
     g = graph_from_edgeslist(edges_df, min_weight=min_weight)
     g = backend.add_graph_attributes(g, nodes_df, edges_df, nodes_info)
     g = reduce_graph(g, config.min_degree)
-    g = handle_spikyball_neighbors(g, backend)
-    return g
+    g = handle_spikyball_neighbors(g, backend).to_undirected()
+    c = nx.number_connected_components(g)
+    if c == 1:
+        return g
+    # take largest connected component
+    largest_cc = max(nx.connected_components(g), key=len)
+    return nx.subgraph(g, largest_cc)
 
 
 def explore(backend, initial_nodes, config):

@@ -25,7 +25,7 @@ class SyntheticGraphSamplingTest(unittest.TestCase):
         g_sub = graph_explore.explore(self.sampling_backend, [1, 2], self.sampling_config)
         self.assertTrue(g_sub.number_of_nodes() > 50)
         self.assertTrue(g_sub.number_of_edges() > 100)
-        self.assertTrue(nx.is_connected(g_sub.to_undirected()))
+        self.assertTrue(nx.is_connected(g_sub))
 
     def test_sampling_coreball_numnodes(self):
         cfg = copy.deepcopy(self.sampling_config)
@@ -34,7 +34,7 @@ class SyntheticGraphSamplingTest(unittest.TestCase):
         g_sub = graph_explore.explore(self.sampling_backend, [1, 2], cfg)
         self.assertTrue(g_sub.number_of_nodes() == 100)
         self.assertTrue(g_sub.number_of_edges() > 100)
-        self.assertTrue(nx.is_connected(g_sub.to_undirected()))
+        self.assertTrue(nx.is_connected(g_sub))
 
     def test_sampling_args_validation(self):
         self.assertRaises(ValueError, graph_explore.explore, self.sampling_backend, [], self.sampling_config)
