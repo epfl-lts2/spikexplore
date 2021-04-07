@@ -9,6 +9,8 @@ class WikipediaGraphSampling(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.wiki_config = WikipediaConfig(lang='en')
+        #  Partial ignore list of not so interesting identifiers
+        #  A huge number of pages link to those...
         cls.wiki_config.pages_ignored = ["BNF (identifier)",
                                          "Bibcode (identifier)",
                                          "CANTIC (identifier)",
