@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='spikexplore',
-    version='0.0.2',
+    version='0.0.3',
     description='Graph exploration using inhomogeneous filtered diffusion',
     url='https://github.com/epfl-lts2/spikexplore',
     author='Nicolas Aspert, Benjamin Ricaud',
@@ -14,7 +14,8 @@ setup(
                       'numpy',
                       'networkx',
                       'tqdm',
-                      'twython'
+                      'twython',
+                      'wikipedia-api'
                       ],
     python_requires='>=3.6',
     classifiers=[
