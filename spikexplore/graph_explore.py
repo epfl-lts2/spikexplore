@@ -1,4 +1,4 @@
-from spikexplore.graph import graph_from_edgeslist, reduce_graph, handle_spikyball_neighbors
+from spikexplore.graph import graph_from_edgeslist, reduce_graph, handle_spikyball_neighbors, detect_communities, remove_small_communities
 from spikexplore.collect_edges import spiky_ball
 import networkx as nx
 
@@ -27,4 +27,8 @@ def explore(backend, initial_nodes, config):
                                                             )
     # create graph from edge list
     g = create_graph(backend, nodes_df, edges_df, nodes_info, config.graph)
-    return g
+
+    if config.graph.community_detection:
+        _, community_dict = detect_communities(g)
+        g = remove_small_communities(g, community_dict, config.graph.min_community_size)
+    return g, nodes_info

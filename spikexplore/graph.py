@@ -5,6 +5,7 @@ import json
 import logging
 from .helpers import combine_dicts
 from datetime import datetime, timedelta
+import community
 from tqdm import tqdm
 
 
@@ -75,6 +76,38 @@ def reduce_graph(g, degree_min):
     g.remove_nodes_from(isolates)
     logging.info('removed {} isolated nodes.'.format(len(isolates)))
     return g
+
+
+def detect_communities(G):
+    # first compute the best partition
+    if isinstance(G, nx.DiGraph):
+        Gu = G.to_undirected()
+    else:
+        Gu = G
+    partition = community.best_partition(Gu, weight='weight')
+    nx.set_node_attributes(G, partition, name='community')
+    logging.debug('Communities saved on the graph as node attributes.')
+    nb_partitions = max(partition.values()) + 1
+    logging.info('Nb of partitions: {}'.format(nb_partitions))
+    # Create a dictionary of subgraphs, one per community
+    community_dic = {}
+    for idx in range(nb_partitions):
+        subgraph = G.subgraph([key for (key, value) in partition.items() if value == idx])
+        community_dic[idx] = subgraph
+    # clusters_modularity = community.modularity(partition, Gu)
+    return G, community_dic
+
+
+def remove_small_communities(G, community_dic, min_size):
+    community_tmp = {k: v.copy() for k, v in community_dic.items()}
+    nb_removed = 0
+    for key in community_tmp:
+        graph = community_tmp[key]
+        if graph.number_of_nodes() <= min_size:
+            G.remove_nodes_from(graph.nodes())
+            nb_removed += 1
+    logging.info('removed {} community(ies) smaller than {} nodes.'.format(nb_removed, min_size))
+    return G
 
 
 def process_hop(graph_handle, node_list, nodes_info_acc):

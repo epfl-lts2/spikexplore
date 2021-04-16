@@ -5,6 +5,8 @@ from dataclasses import dataclass
 class GraphConfig:
     min_weight: int = 1
     min_degree: int = 1
+    community_detection: bool = False
+    min_community_size: int = 1
 
 
 @dataclass
