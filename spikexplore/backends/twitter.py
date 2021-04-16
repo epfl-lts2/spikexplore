@@ -8,6 +8,12 @@ from spikexplore.NodeInfo import NodeInfo
 from spikexplore.graph import add_node_attributes, add_edges_attributes
 
 
+class TwitterCredentials:
+    def __init__(self, app_key, access_token):
+        self.app_key = app_key
+        self.access_token = access_token
+
+
 class TwitterNetwork:
     class TwitterNodeInfo(NodeInfo):
         def __init__(self, user_hashtags={}, user_tweets={}, tweets_meta=pd.DataFrame()):
@@ -24,9 +30,9 @@ class TwitterNetwork:
 
     def __init__(self, credentials, config):
         # Instantiate an object
-        self.consumer_key = credentials['CONSUMER_KEY']
-        self.consumer_secret = credentials['CONSUMER_SECRET']
-        self.twitter_handle = Twython(self.consumer_key, self.consumer_secret)
+        self.app_key = credentials.app_key
+        self.access_token = credentials.access_token
+        self.twitter_handle = Twython(self.app_key, access_token=self.access_token)
         self.config = config
 
     def get_node_info(self):

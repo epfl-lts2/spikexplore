@@ -2,7 +2,7 @@ import os
 import unittest
 import networkx as nx
 from spikexplore import graph_explore
-from spikexplore.backends.twitter import TwitterNetwork
+from spikexplore.backends.twitter import TwitterNetwork, TwitterCredentials
 from spikexplore.config import SamplingConfig, GraphConfig, DataCollectionConfig, TwitterConfig
 
 
@@ -11,10 +11,7 @@ class TwitterGraphSampling(unittest.TestCase):
     def setUpClass(cls):
         cls.twitter_config = TwitterConfig()
         cls.twitter_config.users_to_remove = ['threader_app', 'threadreaderapp']
-        twitter_credentials = {
-            'CONSUMER_KEY': os.getenv('TWITTER_CONSUMER_KEY', ''),
-            'CONSUMER_SECRET': os.getenv('TWITTER_CONSUMER_SECRET', '')
-        }
+        twitter_credentials = TwitterCredentials(os.getenv('TWITTER_APP_KEY', ''), os.getenv('TWITTER_ACCESS_TOKEN', ''))
 
         cls.sampling_backend = TwitterNetwork(twitter_credentials, cls.twitter_config)
         graph_config = GraphConfig(min_degree=2, min_weight=2)
