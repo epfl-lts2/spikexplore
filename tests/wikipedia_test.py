@@ -33,7 +33,7 @@ class WikipediaGraphSampling(unittest.TestCase):
                                          "NLP (identifier)"]
 
         cls.sampling_backend = WikipediaNetwork(cls.wiki_config)
-        graph_config = GraphConfig(min_degree=1, min_weight=1)
+        graph_config = GraphConfig(min_degree=1, min_weight=1, community_detection=False)
         data_collection_config = DataCollectionConfig(exploration_depth=2, random_subset_mode="percent",
                                                       random_subset_size=10, expansion_type="coreball",
                                                       degree=2, max_nodes_per_hop=100)
@@ -41,7 +41,7 @@ class WikipediaGraphSampling(unittest.TestCase):
         cls.initial_nodes = ['Albert Einstein', 'Quantum mechanics', 'Theory of relativity']
 
     def test_sampling_coreball(self):
-        g_sub = graph_explore.explore(self.sampling_backend, self.initial_nodes, self.sampling_config)
+        g_sub, _ = graph_explore.explore(self.sampling_backend, self.initial_nodes, self.sampling_config)
         self.assertTrue(g_sub.number_of_nodes() > 100)
         self.assertTrue(g_sub.number_of_edges() > 700)
         self.assertTrue(nx.is_connected(g_sub))

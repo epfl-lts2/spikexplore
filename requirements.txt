@@ -4,3 +4,4 @@ networkx
 tqdm
 twython
 wikipedia-api
+python-louvain
