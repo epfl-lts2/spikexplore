@@ -7,6 +7,7 @@ class GraphConfig:
     min_degree: int = 1
     community_detection: bool = False
     min_community_size: int = 1
+    as_undirected: bool = True
 
 
 @dataclass

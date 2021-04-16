@@ -8,13 +8,17 @@ def create_graph(backend, nodes_df, edges_df, nodes_info, config):
     g = graph_from_edgeslist(edges_df, min_weight=min_weight)
     g = backend.add_graph_attributes(g, nodes_df, edges_df, nodes_info)
     g = reduce_graph(g, config.min_degree)
-    g = handle_spikyball_neighbors(g, backend).to_undirected()
-    c = nx.number_connected_components(g)
-    if c == 1:
-        return g
-    # take largest connected component
-    largest_cc = max(nx.connected_components(g), key=len)
-    return nx.subgraph(g, largest_cc)
+    g = handle_spikyball_neighbors(g, backend)
+    if config.as_undirected:
+        g = g.to_undirected()
+        c = nx.number_connected_components(g)
+        if c == 1:
+            return g
+        # take largest connected component
+        largest_cc = max(nx.connected_components(g), key=len)
+        return nx.subgraph(g, largest_cc)
+    # cannot do the connected component on directed graphs
+    return g
 
 
 def explore(backend, initial_nodes, config):
