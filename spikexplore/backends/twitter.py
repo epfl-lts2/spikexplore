@@ -134,7 +134,7 @@ class TwitterNetwork:
             logging.warning('Retry after {} seconds.'.format(remainder))
             time.sleep(remainder + 1)
             del self.twitter_handle
-            self.twitter_handle = Twython(self.consumer_key, self.consumer_secret)  # seems you need this
+            self.twitter_handle = Twython(self.app_key, access_token=self.access_token)  # seems you need this
             return {}, {}  # best way to handle it ?
         except TwythonError as e:
             logging.error('Twitter API returned error {} for user {}.'.format(e.error_code, username))
