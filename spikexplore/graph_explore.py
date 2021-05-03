@@ -1,4 +1,5 @@
-from spikexplore.graph import graph_from_edgeslist, reduce_graph, handle_spikyball_neighbors, detect_communities, remove_small_communities
+from spikexplore.graph import graph_from_edgeslist, reduce_graph, handle_spikyball_neighbors
+from spikexplore.graph import detect_communities, remove_small_communities
 from spikexplore.collect_edges import spiky_ball
 import networkx as nx
 

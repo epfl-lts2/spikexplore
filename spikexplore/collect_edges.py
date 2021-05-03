@@ -5,8 +5,6 @@ import logging
 from spikexplore.NodeInfo import NodeInfo
 from spikexplore.graph import process_hop
 
-logger = logging.getLogger()
-
 
 def split_edges(edges_df, node_list):
     # split edges between the ones connecting already collected nodes and the ones connecting new nodes
