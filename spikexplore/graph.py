@@ -9,6 +9,9 @@ import community
 from tqdm import tqdm
 
 
+logger = logging.getLogger(__name__)
+
+
 def convert_to_json(edge_df):
     """
     Check if column type is list or dict and convert it to json
@@ -19,16 +22,16 @@ def convert_to_json(edge_df):
         first_row_element = edge_df.iloc[0, idx]
         if isinstance(first_row_element, list) or isinstance(first_row_element, dict):
             edge_df_str[col] = edge_df[col].apply(json.dumps)
-            logging.debug('Field "{}" of class {} converted to json string'.format(col, type(first_row_element)))
+            logger.debug('Field "{}" of class {} converted to json string'.format(col, type(first_row_element)))
     return edge_df_str
 
 
 def graph_from_edgeslist(edge_df, min_weight=0):
-    logging.debug('Creating the graph from the edge list')
+    logger.debug('Creating the graph from the edge list')
     # The indices in the dataframe are source and target for the edges
     G = nx.from_pandas_edgelist(edge_df[edge_df['weight'] >= min_weight],
                                 source='source', target='target', create_using=nx.DiGraph)
-    logging.info('Nb of nodes: {}'.format(G.number_of_nodes()))
+    logger.info('Nb of nodes: {}'.format(G.number_of_nodes()))
     return G
 
 
@@ -70,11 +73,11 @@ def reduce_graph(g, degree_min):
     # Drop node with small degree
     remove = [node for node, degree in dict(g.degree()).items() if degree < degree_min]
     g.remove_nodes_from(remove)
-    logging.info('Nb of nodes after removing nodes with degree strictly smaller than {}: {}'.format(degree_min,
+    logger.info('Nb of nodes after removing nodes with degree strictly smaller than {}: {}'.format(degree_min,
                                                                                                     g.number_of_nodes()))
     isolates = list(nx.isolates(g))
     g.remove_nodes_from(isolates)
-    logging.info('removed {} isolated nodes.'.format(len(isolates)))
+    logger.info('removed {} isolated nodes.'.format(len(isolates)))
     return g
 
 
@@ -86,9 +89,9 @@ def detect_communities(G):
         Gu = G
     partition = community.best_partition(Gu, weight='weight')
     nx.set_node_attributes(G, partition, name='community')
-    logging.debug('Communities saved on the graph as node attributes.')
+    logger.debug('Communities saved on the graph as node attributes.')
     nb_partitions = max(partition.values()) + 1
-    logging.info('Nb of partitions: {}'.format(nb_partitions))
+    logger.info('Nb of partitions: {}'.format(nb_partitions))
     # Create a dictionary of subgraphs, one per community
     community_dic = {}
     for idx in range(nb_partitions):
@@ -106,7 +109,7 @@ def remove_small_communities(G, community_dic, min_size):
         if graph.number_of_nodes() <= min_size:
             G.remove_nodes_from(graph.nodes())
             nb_removed += 1
-    logging.info('removed {} community(ies) smaller than {} nodes.'.format(nb_removed, min_size))
+    logger.info('removed {} community(ies) smaller than {} nodes.'.format(nb_removed, min_size))
     return G
 
 
@@ -119,7 +122,7 @@ def process_hop(graph_handle, node_list, nodes_info_acc):
 
     # Display progress bar if needed
     disable_tqdm = logging.root.level >= logging.INFO
-    logging.info('processing next hop with {} nodes'.format(len(node_list)))
+    logger.info('processing next hop with {} nodes'.format(len(node_list)))
     for node in tqdm(node_list, disable=disable_tqdm):
         # Collect neighbors for the next hop
         node_info, edges_df = graph_handle.get_neighbors(node)
@@ -138,27 +141,27 @@ def process_hop(graph_handle, node_list, nodes_info_acc):
 def handle_spikyball_neighbors(graph, backend, remove=True, node_acc=None):
     # Complete the info of the nodes not collected
     sp_neighbors = [node for node, data in graph.nodes(data=True) if 'spikyball_hop' not in data]
-    logging.info('Number of neighbors of the spiky ball: {}'.format(len(sp_neighbors)))
+    logger.info('Number of neighbors of the spiky ball: {}'.format(len(sp_neighbors)))
 
     # 2 options: 1) remove the neighbors or 2) rerun the collection to collect the missing node info
     if remove:
         # Option 1:
-        logging.info('Removing spiky ball neighbors...')
+        logger.info('Removing spiky ball neighbors...')
         graph.remove_nodes_from(sp_neighbors)
-        logging.info('Number of nodes after removal: {}'.format(graph.number_of_nodes()))
+        logger.info('Number of nodes after removal: {}'.format(graph.number_of_nodes()))
     else:
         # TODO this needs checking
         # Option 2: collect the missing node data
-        logging.info('Collecting info for neighbors...')
+        logger.info('Collecting info for neighbors...')
         new_nodes_founds, edges_df, nodes_df, node_acc = process_hop(backend, sp_neighbors, node_acc)
         graph = add_node_attributes(graph, nodes_df)
         sp_nodes_dic = {node: -1 for node in sp_neighbors}
         nx.set_node_attributes(graph, sp_nodes_dic, name='spikyball_hop')
-        logging.info('Node info added to the graph.')
+        logger.info('Node info added to the graph.')
     # Check integrity
     for node, data in graph.nodes(data=True):
         if 'spikyball_hop' not in data:
-            logging.error('Missing information for node ', node)
+            logger.error('Missing information for node ', node)
     return graph
 
 
@@ -174,4 +177,4 @@ def compute_meantime(date_list):
 
 def save_graph(graph, graphfilename):
     nx.write_gexf(graph, graphfilename)
-    print('Graph saved to', graphfilename)
+    logger.debug('Graph saved to', graphfilename)

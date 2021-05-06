@@ -1,7 +1,11 @@
+import logging
 import wikipediaapi
 import pandas as pd
 from spikexplore.NodeInfo import NodeInfo
 from spikexplore.graph import add_node_attributes, add_edges_attributes
+
+
+logger = logging.getLogger(__name__)
 
 
 class WikipediaNetwork:
@@ -51,8 +55,10 @@ class WikipediaNetwork:
         return dict.fromkeys(pages_list, 1)
 
     def filter(self, node_info, edges_df):
+        logger.debug('Filtering {} edges'.format(len(edges_df)))
         edges_bl_df = edges_df[~edges_df['target'].isin(self.config.pages_ignored)]
         edges_df_filt = edges_bl_df[edges_bl_df['target_ns'] == 0]  # only keep links to articles
+        logger.debug('{} edges remaining after filtering'.format(len(edges_df_filt)))
         return node_info, edges_df_filt
 
     def reshape_node_data(self, nodes_df):

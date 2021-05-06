@@ -5,6 +5,8 @@ import logging
 from spikexplore.NodeInfo import NodeInfo
 from spikexplore.graph import process_hop
 
+logger = logging.getLogger(__name__)
+
 
 def split_edges(edges_df, node_list):
     # split edges between the ones connecting already collected nodes and the ones connecting new nodes
@@ -72,8 +74,8 @@ def random_subset(edges_df, balltype, mode, coeff, mode_value=None):
         random_subset_size = mode_value
         if isinstance(random_subset_size, int) and (nb_edges > random_subset_size):
             # Only explore a random subset of users
-            logging.debug('---')
-            logging.debug(
+            logger.debug('---')
+            logger.debug(
                 'Too many edges ({}). Keeping a random subset of {}.'.format(nb_edges, random_subset_size))
         else:
             random_subset_size = nb_edges
@@ -83,7 +85,7 @@ def random_subset(edges_df, balltype, mode, coeff, mode_value=None):
             random_subset_size = round(nb_edges * ratio)
             if random_subset_size < 2:  # in case the number of edges is too small
                 random_subset_size = min(nb_edges, 10)
-                logging.warning('Fallback used!')
+                logger.warning('Fallback used!')
         else:
             raise ValueError('the value must be between 0 and 100.')
     else:
@@ -120,8 +122,8 @@ def spiky_ball(initial_node_list, graph_handle, cfg,
 
     # Loop over layers
     for depth in range(exploration_depth):
-        logging.debug('')
-        logging.debug('******* Processing users at {}-hop distance *******'.format(depth))
+        logger.debug('')
+        logger.debug('******* Processing users at {}-hop distance *******'.format(depth))
 
         # Option to choose the number of nodes in the final graph
         if number_of_nodes:
@@ -130,7 +132,7 @@ def spiky_ball(initial_node_list, graph_handle, cfg,
                 max_nodes = min(max_nodes_per_hop, number_of_nodes - len(total_node_list))
                 if max_nodes <= 0:
                     break
-                logging.info('-- max nb of nodes reached in iteration {} --'.format(depth))
+                logger.info('-- max nb of nodes reached in iteration {} --'.format(depth))
                 new_node_list = new_node_list[:max_nodes]
                 new_edges = remove_edges_with_target_nodes(new_edges, new_node_list)
 
@@ -150,9 +152,9 @@ def spiky_ball(initial_node_list, graph_handle, cfg,
         
         new_node_list, new_edges = random_subset(edges_df_out, expansion_type, mode=random_subset_mode,
                                                  mode_value=random_subset_size, coeff=degree)
-        logging.debug('new edges:{} subset:{} in_edges:{}'.format(len(edges_df_out), len(new_edges), len(edges_df_in)))
+        logger.debug('new edges:{} subset:{} in_edges:{}'.format(len(edges_df_out), len(new_edges), len(edges_df_in)))
 
-    logging.debug('Nb of layers reached: {}'.format(depth))
+    logger.debug('Nb of layers reached: {}'.format(depth))
     total_edges_df = total_edges_df.sort_values('weight', ascending=False)
 
     return total_node_list, total_nodes_df, total_edges_df, node_acc
@@ -162,9 +164,9 @@ def save_data(nodes_df, edges_df, data_path):
     # Save to json file
     edgefilename = os.path.join(data_path, 'edges_data.json')
     nodefilename = os.path.join(data_path, 'nodes_data.json')
-    logging.debug('Writing', edgefilename)
+    logger.debug('Writing', edgefilename)
     edges_df.to_json(edgefilename)
-    logging.debug('Writing', nodefilename)
+    logger.debug('Writing', nodefilename)
     nodes_df.to_json(nodefilename)
     return None
 
@@ -172,8 +174,8 @@ def save_data(nodes_df, edges_df, data_path):
 def load_data(data_path):
     nodesfilename = os.path.join(data_path, 'nodes_data.json')
     edgesfilename = os.path.join(data_path, 'edges_data.json')
-    logging.debug('Loading', nodesfilename)
+    logger.debug('Loading', nodesfilename)
     nodes_df = pd.read_json(nodesfilename)
-    logging.debug('Loading', edgesfilename)
+    logger.debug('Loading', edgesfilename)
     edges_df = pd.read_json(edgesfilename)
     return nodes_df, edges_df

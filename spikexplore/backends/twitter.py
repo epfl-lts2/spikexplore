@@ -8,6 +8,9 @@ from spikexplore.NodeInfo import NodeInfo
 from spikexplore.graph import add_node_attributes, add_edges_attributes
 
 
+logger = logging.getLogger(__name__)
+
+
 class TwitterCredentials:
     def __init__(self, app_key, access_token):
         self.app_key = app_key
@@ -122,22 +125,22 @@ class TwitterNetwork:
             return user_tweets, dict(tweets_metadata)
         except TwythonAuthError as e_auth:
             if e_auth.error_code == 401:
-                logging.warning('Unauthorized access to user {}. Skipping.'.format(username))
+                logger.warning('Unauthorized access to user {}. Skipping.'.format(username))
                 return {}, {}
             else:
-                logging.error('Cannot access to twitter API, authentification error. {}'.format(e_auth.error_code))
+                logger.error('Cannot access to twitter API, authentification error. {}'.format(e_auth.error_code))
                 raise
         except TwythonRateLimitError as e_lim:
-            logging.warning('API rate limit reached')
-            logging.warning(e_lim)
+            logger.warning('API rate limit reached')
+            logger.warning(e_lim)
             remainder = float(self.twitter_handle.get_lastfunction_header(header='x-rate-limit-reset')) - time.time()
-            logging.warning('Retry after {} seconds.'.format(remainder))
+            logger.warning('Retry after {} seconds.'.format(remainder))
             time.sleep(remainder + 1)
             del self.twitter_handle
             self.twitter_handle = Twython(self.app_key, access_token=self.access_token)  # seems you need this
             return {}, {}  # best way to handle it ?
         except TwythonError as e:
-            logging.error('Twitter API returned error {} for user {}.'.format(e.error_code, username))
+            logger.error('Twitter API returned error {} for user {}.'.format(e.error_code, username))
             return {}, {}
 
     def edges_nodes_from_user(self, tweets_meta, tweets_dic):
@@ -188,7 +191,6 @@ class TwitterNetwork:
     #####################################################
 
     def reshape_node_data(self, node_df):
-
         node_df = node_df[
             ['user', 'name', 'user_details', 'spikyball_hop', 'account_creation', 'account_default_profile',
              'account_default_profile_image', 'account_favourites', 'account_followers', 'account_following',
