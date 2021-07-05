@@ -109,8 +109,8 @@ def spiky_ball(initial_node_list, graph_handle, cfg,
     expansion_type = cfg.expansion_type
     degree = cfg.degree
     number_of_nodes = cfg.number_of_nodes
-    if exploration_depth < 1:
-        raise ValueError('Exploration depth must be > 0.')
+    if exploration_depth < 2:
+        raise ValueError('Exploration depth must be > 1.')
 
     # Initialization
     new_node_list = initial_node_list.copy()
