@@ -98,7 +98,7 @@ def random_subset(edges_df, balltype, mode, coeff, mode_value=None):
 
 
 def spiky_ball(initial_node_list, graph_handle, cfg,
-               node_acc=NodeInfo()):
+               node_acc=NodeInfo(), progress_callback=None):
     """ Sample the graph by exploring from an initial node list
     """
 
@@ -109,8 +109,8 @@ def spiky_ball(initial_node_list, graph_handle, cfg,
     expansion_type = cfg.expansion_type
     degree = cfg.degree
     number_of_nodes = cfg.number_of_nodes
-    if exploration_depth <= 1:
-        raise ValueError('Exploration depth must be > 0.')
+    if exploration_depth < 2:
+        raise ValueError('Exploration depth must be > 1.')
 
     # Initialization
     new_node_list = initial_node_list.copy()
@@ -152,6 +152,8 @@ def spiky_ball(initial_node_list, graph_handle, cfg,
         
         new_node_list, new_edges = random_subset(edges_df_out, expansion_type, mode=random_subset_mode,
                                                  mode_value=random_subset_size, coeff=degree)
+        if progress_callback:
+            progress_callback(depth, exploration_depth)
         logger.debug('new edges:{} subset:{} in_edges:{}'.format(len(edges_df_out), len(new_edges), len(edges_df_in)))
 
     logger.debug('Nb of layers reached: {}'.format(depth))

@@ -41,6 +41,8 @@ class SyntheticGraphSamplingTest(unittest.TestCase):
         bad_cfg = copy.deepcopy(self.sampling_config)
         bad_cfg.data_collection.exploration_depth = 0
         self.assertRaises(ValueError, graph_explore.explore, self.sampling_backend, [1, 2, 3], bad_cfg)
+        bad_cfg.data_collection.exploration_depth = 1
+        self.assertRaises(ValueError, graph_explore.explore, self.sampling_backend, [1, 2, 3], bad_cfg)
         bad_cfg.data_collection.exploration_depth = 3
         bad_cfg.data_collection.expansion_type = "unknown"
         self.assertRaises(ValueError, graph_explore.explore, self.sampling_backend, [1, 2, 3], bad_cfg)
