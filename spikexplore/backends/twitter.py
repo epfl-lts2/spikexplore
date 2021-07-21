@@ -12,73 +12,21 @@ logger = logging.getLogger(__name__)
 
 
 class TwitterCredentials:
-    def __init__(self, app_key, access_token):
+    def __init__(self, app_key, access_token, consumer_key=None, consumer_secret=None):
         self.app_key = app_key
         self.access_token = access_token
+        self.consumer_key = consumer_key
+        self.consumer_secret = consumer_secret
 
 
-class TwitterNetwork:
-    class TwitterNodeInfo(NodeInfo):
-        def __init__(self, user_hashtags={}, user_tweets={}, tweets_meta=pd.DataFrame()):
-            self.user_hashtags = user_hashtags
-            self.user_tweets = user_tweets
-            self.tweets_meta = tweets_meta
-
-        def update(self, new_info):
-            self.user_hashtags.update(new_info.user_hashtags)
-            self.user_tweets.update(new_info.user_tweets)
-
-        def get_nodes(self):
-            return self.tweets_meta
-
+class TweetsGetterV1:
     def __init__(self, credentials, config):
         # Instantiate an object
         self.app_key = credentials.app_key
         self.access_token = credentials.access_token
-        self.twitter_handle = Twython(self.app_key, access_token=self.access_token)
         self.config = config
-
-    def get_node_info(self):
-        return self.TwitterNodeInfo()
-
-    def get_neighbors(self, user):
-        if not isinstance(user, str):
-            return self.TwitterNodeInfo(), pd.DataFrame()
-        tweets_dic, tweets_meta = self.get_user_tweets(user)
-        edges_df, node_info = self.edges_nodes_from_user(tweets_meta, tweets_dic)
-
-        # replace user and mentions by source and target
-        if not edges_df.empty:
-            edges_df.index.names = ['source', 'target']
-            edges_df.reset_index(level=['source', 'target'], inplace=True)
-
-        return node_info, edges_df
-
-    def filter(self, node_info, edges_df):
-        # filter edges according to node properties
-        # filter according to edges properties
-        edges_df = self.filter_edges(edges_df)
-        return node_info, edges_df
-
-    def filter_edges(self, edges_df):
-        # filter edges according to their properties
-        if edges_df.empty:
-            return edges_df
-        return edges_df[edges_df['weight'] >= self.config.min_mentions]
-
-    def neighbors_list(self, edges_df):
-        if edges_df.empty:
-            return edges_df
-        users_connected = edges_df['target'].tolist()
-        return users_connected
-
-    def neighbors_with_weights(self, edges_df):
-        user_list = self.neighbors_list(edges_df)
-        return dict.fromkeys(user_list, 1)
-
-    ###############################################################
-    # Functions for extracting tweet info from the twitter API
-    ###############################################################
+        self.twitter_handle = Twython(self.app_key, access_token=self.access_token)
+        pass
 
     def filter_old_tweets(self, tweets):
         max_day_old = self.config.max_day_old
@@ -142,6 +90,85 @@ class TwitterNetwork:
         except TwythonError as e:
             logger.error('Twitter API returned error {} for user {}.'.format(e.error_code, username))
             return {}, {}
+
+
+class TweetsGetterV2:
+    def __init(self, credentials, config):
+        pass
+
+    def filter_old_tweets(self, tweets):
+        return list()
+
+    def get_user_tweets(self, username):
+        return {}, {}
+
+
+class TwitterNetwork:
+    class TwitterNodeInfo(NodeInfo):
+        def __init__(self, user_hashtags={}, user_tweets={}, tweets_meta=pd.DataFrame()):
+            self.user_hashtags = user_hashtags
+            self.user_tweets = user_tweets
+            self.tweets_meta = tweets_meta
+
+        def update(self, new_info):
+            self.user_hashtags.update(new_info.user_hashtags)
+            self.user_tweets.update(new_info.user_tweets)
+
+        def get_nodes(self):
+            return self.tweets_meta
+
+    def __init__(self, credentials, config):
+        if config.api_version == 1:
+            self.tweets_getter = TweetsGetterV1(credentials, config)
+        elif config.api_version == 2:
+            self.tweets_getter = TweetsGetterV2(credentials, config)
+        else:
+            raise ValueError("Invalid api version")
+        self.config = config
+
+    def get_node_info(self):
+        return self.TwitterNodeInfo()
+
+    def get_neighbors(self, user):
+        if not isinstance(user, str):
+            return self.TwitterNodeInfo(), pd.DataFrame()
+        tweets_dic, tweets_meta = self.tweets_getter.get_user_tweets(user)
+        edges_df, node_info = self.edges_nodes_from_user(tweets_meta, tweets_dic)
+
+        # replace user and mentions by source and target
+        if not edges_df.empty:
+            edges_df.index.names = ['source', 'target']
+            edges_df.reset_index(level=['source', 'target'], inplace=True)
+
+        return node_info, edges_df
+
+    def filter(self, node_info, edges_df):
+        # filter edges according to node properties
+        # filter according to edges properties
+        edges_df = self.filter_edges(edges_df)
+        return node_info, edges_df
+
+    def filter_edges(self, edges_df):
+        # filter edges according to their properties
+        if edges_df.empty:
+            return edges_df
+        return edges_df[edges_df['weight'] >= self.config.min_mentions]
+
+    def neighbors_list(self, edges_df):
+        if edges_df.empty:
+            return edges_df
+        users_connected = edges_df['target'].tolist()
+        return users_connected
+
+    def neighbors_with_weights(self, edges_df):
+        user_list = self.neighbors_list(edges_df)
+        return dict.fromkeys(user_list, 1)
+
+    ###############################################################
+    # Functions for extracting tweet info from the twitter API
+    ###############################################################
+
+
 
     def edges_nodes_from_user(self, tweets_meta, tweets_dic):
         # Make an edge and node property dataframes

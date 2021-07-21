@@ -11,6 +11,7 @@ class TwitterGraphSampling(unittest.TestCase):
     def setUpClass(cls):
         cls.twitter_config = TwitterConfig()
         cls.twitter_config.users_to_remove = ['threader_app', 'threadreaderapp']
+        cls.twitter_config.api_version = 1
         twitter_credentials = TwitterCredentials(os.getenv('TWITTER_APP_KEY', ''), os.getenv('TWITTER_ACCESS_TOKEN', ''))
 
         cls.sampling_backend = TwitterNetwork(twitter_credentials, cls.twitter_config)
