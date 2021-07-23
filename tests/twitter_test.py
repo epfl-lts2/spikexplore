@@ -21,7 +21,7 @@ class TwitterGraphSampling(unittest.TestCase):
         cls.twitter_v2_config = TwitterConfig()
         cls.twitter_v2_config.users_to_remove = ['threader_app', 'threadreaderapp']
         cls.twitter_v2_config.api_version = 2
-        cls.twitter_v2_config.max_tweets_per_user = 100 # API limit
+        cls.twitter_v2_config.max_tweets_per_user = 150
         cls.sampling_backend_v2 = TwitterNetwork(twitter_credentials, cls.twitter_v2_config)
 
         graph_config = GraphConfig(min_degree=2, min_weight=2, community_detection=True, min_community_size=2, as_undirected=False)

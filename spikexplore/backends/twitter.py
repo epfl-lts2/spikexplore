@@ -128,18 +128,22 @@ class TweetsGetterV2:
                 self.user_cache[username] = res['data']
         return self.user_cache[username]
 
-    def get_user_tweets(self, username):
-        params = {'max_results': self.config.max_tweets_per_user, 'expansions': 'author_id,entities.mentions.username',
+    def _get_user_tweets(self, username, num_tweets, next_token):
+        assert(num_tweets <= 100 and num_tweets > 0)
+        params = {'max_results': num_tweets, 'expansions': 'author_id,entities.mentions.username',
                   'tweet.fields': 'entities,created_at,public_metrics,lang'}
         if self.start_time:
             params['start_time'] = self.start_time
 
+        if next_token:
+            params['pagination_token'] = next_token
+
         user_info = self._get_user_info(username)
         if not user_info:  # not found
-            return {}, {}
+            return {}, {}, None
         if user_info['protected']:
             logger.info('Skipping user {} - protected account'.format(username))
-            return {}, {}
+            return {}, {}, None
 
         tweets_raw = dict(self.twitter_handle.request('users/:{}/tweets'.format(user_info['id']), params).json())
 
@@ -149,7 +153,8 @@ class TweetsGetterV2:
 
         if 'data' not in tweets_raw:
             logger.warning('Empty results for {}'.format(username))
-            return {}, {}
+            return {}, {}, None
+
         user_tweets = {int(x['id']): x for x in tweets_raw['data']}
         tweets_metadata = \
             dict(map(lambda x: (x[0], {'user': user_info['username'],
@@ -169,7 +174,23 @@ class TweetsGetterV2:
                                        'account_verified': user_info['verified']}),
                      user_tweets.items()))
 
-        return user_tweets, tweets_metadata
+        return user_tweets, tweets_metadata, tweets_raw['meta'].get('next_token', None)
+
+    def get_user_tweets(self, username):
+        remaining_number_of_tweets = self.config.max_tweets_per_user
+        next_token = None
+        user_tweets_acc = {}
+        tweets_metadata_acc = {}
+        while remaining_number_of_tweets > 0:
+            number_of_tweets = 100 if remaining_number_of_tweets > 100 else remaining_number_of_tweets
+            remaining_number_of_tweets -= number_of_tweets
+            user_tweets, tweets_metadata, next_token = self._get_user_tweets(username, number_of_tweets, next_token)
+            user_tweets_acc.update(user_tweets)
+            tweets_metadata_acc.update(tweets_metadata)
+            if not next_token:
+                break
+        return user_tweets_acc, tweets_metadata_acc
+
 
     def reshape_node_data(self, node_df):
         node_df = node_df[
