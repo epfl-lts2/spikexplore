@@ -119,9 +119,11 @@ class TweetsGetterV2:
         if username not in self.user_cache:
             params = {'user.fields': 'created_at,verified,description,public_metrics,protected,profile_image_url'}
             res = dict(self.twitter_handle.request('users/by/username/:{}'.format(username), params).json())
+
             if 'errors' in res:
-                logger.info('API Error - {}'.format(res['errors']['details']))
                 self.user_cache[username] = None
+                for e in res['errors']:
+                    logger.error(e['detail'])
             else:
                 self.user_cache[username] = res['data']
         return self.user_cache[username]
@@ -146,7 +148,7 @@ class TweetsGetterV2:
                 logger.error(e['detail'])
 
         if 'data' not in tweets_raw:
-            logger.error('Empty results for {}'.format(username))
+            logger.warning('Empty results for {}'.format(username))
             return {}, {}
         user_tweets = {int(x['id']): x for x in tweets_raw['data']}
         tweets_metadata = \
