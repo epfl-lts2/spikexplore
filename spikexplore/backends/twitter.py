@@ -1,12 +1,12 @@
 import time
 import logging
+from TwitterAPI import TwitterAPI
 from twython import Twython
 from twython import TwythonError, TwythonRateLimitError, TwythonAuthError
 import pandas as pd
 from datetime import datetime, timedelta
 from spikexplore.NodeInfo import NodeInfo
 from spikexplore.graph import add_node_attributes, add_edges_attributes
-
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ class TweetsGetterV1:
         self.twitter_handle = Twython(self.app_key, access_token=self.access_token)
         pass
 
-    def filter_old_tweets(self, tweets):
+    def _filter_old_tweets(self, tweets):
         max_day_old = self.config.max_day_old
         if not max_day_old:
             return tweets
@@ -49,7 +49,7 @@ class TweetsGetterV1:
                                                                     count=count, include_rts=True,
                                                                     tweet_mode='extended', exclude_replies=False)
             # remove old tweets
-            user_tweets_filt = self.filter_old_tweets(user_tweets_raw)
+            user_tweets_filt = self._filter_old_tweets(user_tweets_raw)
             # make a dictionary
             user_tweets = {x['id']: x for x in user_tweets_filt}
             tweets_metadata = \
@@ -91,16 +91,91 @@ class TweetsGetterV1:
             logger.error('Twitter API returned error {} for user {}.'.format(e.error_code, username))
             return {}, {}
 
+    def reshape_node_data(self, node_df):
+        # user name user_details mentions hashtags retweet_count favorite_count
+        # created_at account_creation account_followers account_following account_statuses account_favourites
+        # account_verified account_default_profile account_default_profile_image spikyball_hop
+        node_df = node_df[
+            ['user', 'name', 'user_details', 'spikyball_hop', 'account_creation', 'account_default_profile',
+             'account_default_profile_image', 'account_favourites', 'account_followers', 'account_following',
+             'account_statuses', 'account_verified']]
+        node_df = node_df.reset_index().groupby('user').max().rename(columns={'index': 'max_tweet_id'})
+        return node_df
+
 
 class TweetsGetterV2:
-    def __init(self, credentials, config):
-        pass
+    def __init__(self, credentials, config):
+        self.twitter_handle = TwitterAPI(credentials.consumer_key, credentials.consumer_secret,
+                                         api_version='2', auth_type='oAuth2')
+        self.config = config
+        self.start_time = None
+        if config.max_day_old:
+            days_limit = datetime.now() - timedelta(days=config.max_day_old)
+            #  date format: 2010-11-06T00:00:00Z
+            self.start_time = days_limit.strftime('%Y-%m-%dT%H:%M:%SZ')
+        self.user_cache = {}
 
-    def filter_old_tweets(self, tweets):
-        return list()
+    def _get_user_info(self, username):
+        if username not in self.user_cache:
+            params = {'user.fields': 'created_at,verified,description,public_metrics,protected,profile_image_url'}
+            res = dict(self.twitter_handle.request('users/by/username/:{}'.format(username), params).json())
+            if 'errors' in res:
+                logger.info('API Error - {}'.format(res['errors']['details']))
+                self.user_cache[username] = None
+            else:
+                self.user_cache[username] = res['data']
+        return self.user_cache[username]
 
     def get_user_tweets(self, username):
-        return {}, {}
+        params = {'max_results': self.config.max_tweets_per_user, 'expansions': 'author_id,entities.mentions.username',
+                  'tweet.fields': 'entities,created_at,public_metrics,lang'}
+        if self.start_time:
+            params['start_time'] = self.start_time
+
+        user_info = self._get_user_info(username)
+        if not user_info:  # not found
+            return {}, {}
+        if user_info['protected']:
+            logger.info('Skipping user {} - protected account'.format(username))
+            return {}, {}
+
+        tweets_raw = dict(self.twitter_handle.request('users/:{}/tweets'.format(user_info['id']), params).json())
+
+        if 'errors' in tweets_raw:
+            for e in tweets_raw['errors']:
+                logger.error(e['detail'])
+
+        if 'data' not in tweets_raw:
+            logger.error('Empty results for {}'.format(username))
+            return {}, {}
+        user_tweets = {int(x['id']): x for x in tweets_raw['data']}
+        tweets_metadata = \
+            dict(map(lambda x: (x[0], {'user': user_info['username'],
+                                       'name': user_info['name'],
+                                       'user_details': user_info['description'],
+                                       'mentions': list(
+                                           map(lambda y: y['username'], x[1].get('entities', {}).get('mentions', {}))),
+                                       'hashtags': list(
+                                           map(lambda y: y['tag'], x[1].get('entities', {}).get('hashtags', {}))),
+                                       'retweet_count': x[1]['public_metrics']['retweet_count'],
+                                       'favorite_count': x[1]['public_metrics']['like_count'],
+                                       'created_at': x[1]['created_at'],
+                                       'account_creation': user_info['created_at'],
+                                       'account_followers': user_info['public_metrics']['followers_count'],
+                                       'account_following': user_info['public_metrics']['following_count'],
+                                       'account_statuses': user_info['public_metrics']['tweet_count'],
+                                       'account_verified': user_info['verified']}),
+                     user_tweets.items()))
+
+        return user_tweets, tweets_metadata
+
+    def reshape_node_data(self, node_df):
+        node_df = node_df[
+            ['user', 'name', 'user_details', 'spikyball_hop', 'account_creation',
+             'account_followers', 'account_following',
+             'account_statuses', 'account_verified']]
+        node_df = node_df.reset_index().groupby('user').max().rename(columns={'index': 'max_tweet_id'})
+        return node_df
 
 
 class TwitterNetwork:
@@ -168,8 +243,6 @@ class TwitterNetwork:
     # Functions for extracting tweet info from the twitter API
     ###############################################################
 
-
-
     def edges_nodes_from_user(self, tweets_meta, tweets_dic):
         # Make an edge and node property dataframes
         edges_df = self.get_edges(tweets_meta)
@@ -217,16 +290,8 @@ class TwitterNetwork:
     ## Utils functions for the graph
     #####################################################
 
-    def reshape_node_data(self, node_df):
-        node_df = node_df[
-            ['user', 'name', 'user_details', 'spikyball_hop', 'account_creation', 'account_default_profile',
-             'account_default_profile_image', 'account_favourites', 'account_followers', 'account_following',
-             'account_statuses', 'account_verified']]
-        node_df = node_df.reset_index().groupby('user').max().rename(columns={'index': 'max_tweet_id'})
-        return node_df
-
     def add_graph_attributes(self, g, nodes_df, edges_df, nodes_info):
         g = add_edges_attributes(g, edges_df, drop_cols=['tweet_id', 'degree_target', 'degree_source'])
-        g = add_node_attributes(g, self.reshape_node_data(nodes_df), attr_dic=nodes_info.user_hashtags,
+        g = add_node_attributes(g, self.tweets_getter.reshape_node_data(nodes_df), attr_dic=nodes_info.user_hashtags,
                                 attr_name='all_hashtags')
         return g
