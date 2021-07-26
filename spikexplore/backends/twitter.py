@@ -119,7 +119,7 @@ class TweetsGetterV2:
         res = self.twitter_handle.request(request_str, params)
         while res.status_code == 429:  # rate limit reached
             logger.warning('API rate limit reached')
-            remainder = float(res.header['x-rate-limit-reset']) - time.time()
+            remainder = float(res.headers['x-rate-limit-reset']) - time.time()
             logger.warning('Retry after {} seconds.'.format(remainder))
             time.sleep(remainder + 1)
             res = self.twitter_handle.request(request_str, params)
