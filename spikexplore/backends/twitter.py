@@ -137,7 +137,7 @@ class TweetsGetterV2:
             if 'errors' in res:
                 self.user_cache[username] = None
                 for e in res['errors']:
-                    logger.error(e['detail'])
+                    logger.info(e['detail'])
             else:
                 self.user_cache[username] = res['data']
         return self.user_cache[username]
@@ -163,10 +163,10 @@ class TweetsGetterV2:
 
         if 'errors' in tweets_raw:
             for e in tweets_raw['errors']:
-                logger.error(e['detail'])
+                logger.info(e['detail'])
 
         if 'data' not in tweets_raw:
-            logger.warning('Empty results for {}'.format(username))
+            logger.info('Empty results for {}'.format(username))
             return {}, {}, None
 
         user_tweets = {int(x['id']): x for x in tweets_raw['data']}
