@@ -115,10 +115,24 @@ class TweetsGetterV2:
             self.start_time = days_limit.strftime('%Y-%m-%dT%H:%M:%SZ')
         self.user_cache = {}
 
+    def _safe_twitter_request(self, request_str, params):
+        res = self.twitter_handle.request(request_str, params)
+        while res.status_code == 429:  # rate limit reached
+            logger.warning('API rate limit reached')
+            remainder = float(res.header['x-rate-limit-reset']) - time.time()
+            logger.warning('Retry after {} seconds.'.format(remainder))
+            time.sleep(remainder + 1)
+            res = self.twitter_handle.request(request_str, params)
+
+        if res.status_code != 200:
+            logger.warning('API returned with code {}'.format(res.status_code))
+
+        return res
+
     def _get_user_info(self, username):
         if username not in self.user_cache:
             params = {'user.fields': 'created_at,verified,description,public_metrics,protected,profile_image_url'}
-            res = dict(self.twitter_handle.request('users/by/username/:{}'.format(username), params).json())
+            res = dict(self._safe_twitter_request('users/by/username/:{}'.format(username), params).json())
 
             if 'errors' in res:
                 self.user_cache[username] = None
@@ -145,7 +159,7 @@ class TweetsGetterV2:
             logger.info('Skipping user {} - protected account'.format(username))
             return {}, {}, None
 
-        tweets_raw = dict(self.twitter_handle.request('users/:{}/tweets'.format(user_info['id']), params).json())
+        tweets_raw = dict(self._safe_twitter_request('users/:{}/tweets'.format(user_info['id']), params).json())
 
         if 'errors' in tweets_raw:
             for e in tweets_raw['errors']:
