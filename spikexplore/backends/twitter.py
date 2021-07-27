@@ -142,10 +142,18 @@ class TweetsGetterV2:
                 self.user_cache[username] = res['data']
         return self.user_cache[username]
 
+    def _fill_user_info(self, includes):
+        if 'users' not in includes:
+            return
+        for u in includes['users']:
+            if u['username'] not in self.user_cache:
+                self.user_cache['username'] = u
+
     def _get_user_tweets(self, username, num_tweets, next_token):
         assert(num_tweets <= 100 and num_tweets > 0)
         params = {'max_results': num_tweets, 'expansions': 'author_id,entities.mentions.username',
-                  'tweet.fields': 'entities,created_at,public_metrics,lang'}
+                  'tweet.fields': 'entities,created_at,public_metrics,lang',
+                  'user.fields': 'verified,created_at,public_metrics,protected,profile_image_url'}
         if self.start_time:
             params['start_time'] = self.start_time
 
@@ -162,8 +170,9 @@ class TweetsGetterV2:
         tweets_raw = dict(self._safe_twitter_request('users/:{}/tweets'.format(user_info['id']), params).json())
 
         if 'errors' in tweets_raw:
-            for e in tweets_raw['errors']:
-                logger.info(e['detail'])
+            err_details = set([e['detail'] for e in tweets_raw['errors']])
+            for e in err_details:
+                logger.info(e)
 
         if 'data' not in tweets_raw:
             logger.info('Empty results for {}'.format(username))
@@ -188,6 +197,9 @@ class TweetsGetterV2:
                                        'account_verified': user_info['verified']}),
                      user_tweets.items()))
 
+        if 'includes' in tweets_raw:
+            self._fill_user_info(tweets_raw['includes'])
+
         return user_tweets, tweets_metadata, tweets_raw['meta'].get('next_token', None)
 
     def get_user_tweets(self, username):
@@ -204,7 +216,6 @@ class TweetsGetterV2:
             if not next_token:
                 break
         return user_tweets_acc, tweets_metadata_acc
-
 
     def reshape_node_data(self, node_df):
         node_df = node_df[
