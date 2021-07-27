@@ -147,7 +147,7 @@ class TweetsGetterV2:
             return
         for u in includes['users']:
             if u['username'] not in self.user_cache:
-                self.user_cache['username'] = u
+                self.user_cache[u['username']] = u
 
     def _get_user_tweets(self, username, num_tweets, next_token):
         assert(num_tweets <= 100 and num_tweets > 0)
