@@ -29,7 +29,7 @@ class TwitterGraphSampling(unittest.TestCase):
                                                       random_subset_size=10, expansion_type="coreball",
                                                       degree=2, max_nodes_per_hop=100)
         cls.sampling_config = SamplingConfig(graph_config, data_collection_config)
-        cls.initial_nodes = ['github', 'Microsoft', 'GitHubSecurity', 'GitHubEducation']
+        cls.initial_nodes = ['github', 'Microsoft', 'GitHubSecurity', 'GitHubEducation', 'YouTube']
 
     def test_sampling_coreball(self):
         g_sub, _ = graph_explore.explore(self.sampling_backend, self.initial_nodes, self.sampling_config)
