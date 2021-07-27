@@ -153,7 +153,7 @@ class TweetsGetterV2:
         assert(num_tweets <= 100 and num_tweets > 0)
         params = {'max_results': num_tweets, 'expansions': 'author_id,entities.mentions.username',
                   'tweet.fields': 'entities,created_at,public_metrics,lang',
-                  'user.fields': 'verified,created_at,public_metrics,protected,profile_image_url'}
+                  'user.fields': 'verified,description,created_at,public_metrics,protected,profile_image_url'}
         if self.start_time:
             params['start_time'] = self.start_time
 
