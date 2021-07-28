@@ -179,6 +179,18 @@ class TweetsGetterV2:
             return {}, {}, None
 
         user_tweets = {int(x['id']): x for x in tweets_raw['data']}
+        # make the tweets dict similar to the one retrieved using APIv1
+        for k in user_tweets.keys():
+            user_tweets[k]['id'] = k  # preserve 'id' as int (used as index)
+            user_tweets[k]['id_str'] = str(k)
+            user_tweets[k]['user'] = {'id': int(user_info['id']), 'id_str': user_info['id'],
+                                      'screen_name': user_info['username'], 'name': user_info['name'],
+                                      'description': user_info['description'], 'verified': user_info['verified'],
+                                      'protected': user_info['protected'],
+                                      'created_at': user_info['created_at'],
+                                      'followers_count': user_info['public_metrics']['followers_count'],
+                                      'friends_count': user_info['public_metrics']['following_count'],
+                                      'statuses_count': user_info['public_metrics']['tweet_count']}
         tweets_metadata = \
             dict(map(lambda x: (x[0], {'user': user_info['username'],
                                        'name': user_info['name'],
