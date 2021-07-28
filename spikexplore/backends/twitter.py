@@ -151,8 +151,8 @@ class TweetsGetterV2:
 
     def _get_user_tweets(self, username, num_tweets, next_token):
         assert(num_tweets <= 100 and num_tweets > 0)
-        params = {'max_results': num_tweets, 'expansions': 'author_id,entities.mentions.username',
-                  'tweet.fields': 'entities,created_at,public_metrics,lang',
+        params = {'max_results': num_tweets, 'expansions': 'author_id,entities.mentions.username,referenced_tweets.id',
+                  'tweet.fields': 'entities,created_at,public_metrics,lang,referenced_tweets',
                   'user.fields': 'verified,description,created_at,public_metrics,protected,profile_image_url'}
         if self.start_time:
             params['start_time'] = self.start_time
@@ -179,10 +179,12 @@ class TweetsGetterV2:
             return {}, {}, None
 
         user_tweets = {int(x['id']): x for x in tweets_raw['data']}
+        referenced_tweets = {x['id']: x for x in tweets_raw['includes'].get('tweets', {})}
         # make the tweets dict similar to the one retrieved using APIv1
         for k in user_tweets.keys():
+            user_tweets[k]['id_str'] = user_tweets[k]['id']
             user_tweets[k]['id'] = k  # preserve 'id' as int (used as index)
-            user_tweets[k]['id_str'] = str(k)
+            user_tweets[k]['full_text'] = user_tweets[k].pop('text')
             user_tweets[k]['user'] = {'id': int(user_info['id']), 'id_str': user_info['id'],
                                       'screen_name': user_info['username'], 'name': user_info['name'],
                                       'description': user_info['description'], 'verified': user_info['verified'],
@@ -191,6 +193,20 @@ class TweetsGetterV2:
                                       'followers_count': user_info['public_metrics']['followers_count'],
                                       'friends_count': user_info['public_metrics']['following_count'],
                                       'statuses_count': user_info['public_metrics']['tweet_count']}
+            # handle retweet info
+            if 'referenced_tweets' in user_tweets[k]:
+                ref = list(filter(lambda x: x['type'] == 'quoted' or x['type'] == 'retweeted',
+                                  user_tweets[k]['referenced_tweets']))
+                if ref:
+                    ref_type = ref[0]['type']
+                    ref_txt = ''
+
+                    if ref_type == 'quoted':
+                        ref_txt = user_tweets[k]['full_text'] + " "
+                    ref_txt += referenced_tweets[ref[0]['id']]['text']
+
+                    user_tweets[k]['retweeted_status'] = {'full_text': ref_txt}
+
         tweets_metadata = \
             dict(map(lambda x: (x[0], {'user': user_info['username'],
                                        'name': user_info['name'],
