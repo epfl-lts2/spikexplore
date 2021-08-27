@@ -24,9 +24,9 @@ class TwitterGraphSampling(unittest.TestCase):
         cls.twitter_v2_config.max_tweets_per_user = 50
         cls.sampling_backend_v2 = TwitterNetwork(twitter_credentials, cls.twitter_v2_config)
 
-        graph_config = GraphConfig(min_degree=2, min_weight=2, community_detection=True, min_community_size=2, as_undirected=False)
+        graph_config = GraphConfig(min_degree=2, min_weight=1, community_detection=True, min_community_size=2, as_undirected=False)
         data_collection_config = DataCollectionConfig(exploration_depth=2, random_subset_mode="percent",
-                                                      random_subset_size=10, expansion_type="coreball",
+                                                      random_subset_size=20, expansion_type="coreball",
                                                       degree=2, max_nodes_per_hop=100)
         cls.sampling_config = SamplingConfig(graph_config, data_collection_config)
         cls.initial_nodes = ['github', 'Microsoft', 'GitHubSecurity', 'GitHubEducation', 'YouTube']
