@@ -38,6 +38,7 @@ class TwitterConfig:
     max_tweets_per_user: int = 200
     nb_popular_tweets: int = 10
     users_to_remove = []
+    api_version: int = 1
 
 
 @dataclass

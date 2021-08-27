@@ -1,5 +1,6 @@
 import time
 import logging
+from TwitterAPI import TwitterAPI
 from twython import Twython
 from twython import TwythonError, TwythonRateLimitError, TwythonAuthError
 import pandas as pd
@@ -7,80 +8,27 @@ from datetime import datetime, timedelta
 from spikexplore.NodeInfo import NodeInfo
 from spikexplore.graph import add_node_attributes, add_edges_attributes
 
-
 logger = logging.getLogger(__name__)
 
 
 class TwitterCredentials:
-    def __init__(self, app_key, access_token):
+    def __init__(self, app_key, access_token, consumer_key=None, consumer_secret=None):
         self.app_key = app_key
         self.access_token = access_token
+        self.consumer_key = consumer_key
+        self.consumer_secret = consumer_secret
 
 
-class TwitterNetwork:
-    class TwitterNodeInfo(NodeInfo):
-        def __init__(self, user_hashtags={}, user_tweets={}, tweets_meta=pd.DataFrame()):
-            self.user_hashtags = user_hashtags
-            self.user_tweets = user_tweets
-            self.tweets_meta = tweets_meta
-
-        def update(self, new_info):
-            self.user_hashtags.update(new_info.user_hashtags)
-            self.user_tweets.update(new_info.user_tweets)
-
-        def get_nodes(self):
-            return self.tweets_meta
-
+class TweetsGetterV1:
     def __init__(self, credentials, config):
         # Instantiate an object
         self.app_key = credentials.app_key
         self.access_token = credentials.access_token
-        self.twitter_handle = Twython(self.app_key, access_token=self.access_token)
         self.config = config
+        self.twitter_handle = Twython(self.app_key, access_token=self.access_token)
+        pass
 
-    def get_node_info(self):
-        return self.TwitterNodeInfo()
-
-    def get_neighbors(self, user):
-        if not isinstance(user, str):
-            return self.TwitterNodeInfo(), pd.DataFrame()
-        tweets_dic, tweets_meta = self.get_user_tweets(user)
-        edges_df, node_info = self.edges_nodes_from_user(tweets_meta, tweets_dic)
-
-        # replace user and mentions by source and target
-        if not edges_df.empty:
-            edges_df.index.names = ['source', 'target']
-            edges_df.reset_index(level=['source', 'target'], inplace=True)
-
-        return node_info, edges_df
-
-    def filter(self, node_info, edges_df):
-        # filter edges according to node properties
-        # filter according to edges properties
-        edges_df = self.filter_edges(edges_df)
-        return node_info, edges_df
-
-    def filter_edges(self, edges_df):
-        # filter edges according to their properties
-        if edges_df.empty:
-            return edges_df
-        return edges_df[edges_df['weight'] >= self.config.min_mentions]
-
-    def neighbors_list(self, edges_df):
-        if edges_df.empty:
-            return edges_df
-        users_connected = edges_df['target'].tolist()
-        return users_connected
-
-    def neighbors_with_weights(self, edges_df):
-        user_list = self.neighbors_list(edges_df)
-        return dict.fromkeys(user_list, 1)
-
-    ###############################################################
-    # Functions for extracting tweet info from the twitter API
-    ###############################################################
-
-    def filter_old_tweets(self, tweets):
+    def _filter_old_tweets(self, tweets):
         max_day_old = self.config.max_day_old
         if not max_day_old:
             return tweets
@@ -101,7 +49,7 @@ class TwitterNetwork:
                                                                     count=count, include_rts=True,
                                                                     tweet_mode='extended', exclude_replies=False)
             # remove old tweets
-            user_tweets_filt = self.filter_old_tweets(user_tweets_raw)
+            user_tweets_filt = self._filter_old_tweets(user_tweets_raw)
             # make a dictionary
             user_tweets = {x['id']: x for x in user_tweets_filt}
             tweets_metadata = \
@@ -142,6 +90,234 @@ class TwitterNetwork:
         except TwythonError as e:
             logger.error('Twitter API returned error {} for user {}.'.format(e.error_code, username))
             return {}, {}
+
+    def reshape_node_data(self, node_df):
+        # user name user_details mentions hashtags retweet_count favorite_count
+        # created_at account_creation account_followers account_following account_statuses account_favourites
+        # account_verified account_default_profile account_default_profile_image spikyball_hop
+        node_df = node_df[
+            ['user', 'name', 'user_details', 'spikyball_hop', 'account_creation', 'account_default_profile',
+             'account_default_profile_image', 'account_favourites', 'account_followers', 'account_following',
+             'account_statuses', 'account_verified']]
+        node_df = node_df.reset_index().groupby('user').max().rename(columns={'index': 'max_tweet_id'})
+        return node_df
+
+
+class TweetsGetterV2:
+    def __init__(self, credentials, config):
+        self.twitter_handle = TwitterAPI(credentials.consumer_key, credentials.consumer_secret,
+                                         api_version='2', auth_type='oAuth2')
+        self.config = config
+        self.start_time = None
+        if config.max_day_old:
+            days_limit = datetime.now() - timedelta(days=config.max_day_old)
+            #  date format: 2010-11-06T00:00:00Z
+            self.start_time = days_limit.strftime('%Y-%m-%dT%H:%M:%SZ')
+        self.user_cache = {}
+
+    def _safe_twitter_request(self, request_str, params):
+        res = self.twitter_handle.request(request_str, params)
+        while res.status_code == 429:  # rate limit reached
+            logger.warning('API rate limit reached')
+            remainder = float(res.headers['x-rate-limit-reset']) - time.time()
+            logger.warning('Retry after {} seconds.'.format(remainder))
+            time.sleep(remainder + 1)
+            res = self.twitter_handle.request(request_str, params)
+
+        if res.status_code != 200:
+            logger.warning('API returned with code {}'.format(res.status_code))
+
+        return res
+
+    def _get_user_info(self, username):
+        if username not in self.user_cache:
+            params = {'user.fields': 'created_at,verified,description,public_metrics,protected,profile_image_url'}
+            res = dict(self._safe_twitter_request('users/by/username/:{}'.format(username), params).json())
+
+            if 'errors' in res:
+                self.user_cache[username] = None
+                for e in res['errors']:
+                    logger.info(e['detail'])
+            else:
+                self.user_cache[username] = res['data']
+        return self.user_cache[username]
+
+    def _fill_user_info(self, includes):
+        if 'users' not in includes:
+            return
+        for u in includes['users']:
+            if u['username'] not in self.user_cache:
+                self.user_cache[u['username']] = u
+
+    def _get_user_tweets(self, username, num_tweets, next_token):
+        assert(num_tweets <= 100 and num_tweets > 0)
+        params = {'max_results': num_tweets, 'expansions': 'author_id,entities.mentions.username,referenced_tweets.id',
+                  'tweet.fields': 'entities,created_at,public_metrics,lang,referenced_tweets',
+                  'user.fields': 'verified,description,created_at,public_metrics,protected,profile_image_url'}
+        if self.start_time:
+            params['start_time'] = self.start_time
+
+        if next_token:
+            params['pagination_token'] = next_token
+
+        user_info = self._get_user_info(username)
+        if not user_info:  # not found
+            return {}, {}, None
+        if user_info['protected']:
+            logger.info('Skipping user {} - protected account'.format(username))
+            return {}, {}, None
+
+        tweets_raw = dict(self._safe_twitter_request('users/:{}/tweets'.format(user_info['id']), params).json())
+
+        if 'errors' in tweets_raw:
+            err_details = set([e['detail'] for e in tweets_raw['errors']])
+            for e in err_details:
+                logger.info(e)
+
+        if 'data' not in tweets_raw:
+            logger.info('Empty results for {}'.format(username))
+            return {}, {}, None
+
+        user_tweets = {int(x['id']): x for x in tweets_raw['data']}
+        referenced_tweets = {x['id']: x for x in tweets_raw['includes'].get('tweets', {})}
+        # make the tweets dict similar to the one retrieved using APIv1
+        for k in user_tweets.keys():
+            user_tweets[k]['id_str'] = user_tweets[k]['id']
+            user_tweets[k]['id'] = k  # preserve 'id' as int (used as index)
+            user_tweets[k]['full_text'] = user_tweets[k].pop('text')
+            user_tweets[k]['user'] = {'id': int(user_info['id']), 'id_str': user_info['id'],
+                                      'screen_name': user_info['username'], 'name': user_info['name'],
+                                      'description': user_info['description'], 'verified': user_info['verified'],
+                                      'protected': user_info['protected'],
+                                      'created_at': user_info['created_at'],
+                                      'followers_count': user_info['public_metrics']['followers_count'],
+                                      'friends_count': user_info['public_metrics']['following_count'],
+                                      'statuses_count': user_info['public_metrics']['tweet_count']}
+            # handle retweet info
+            if 'referenced_tweets' in user_tweets[k]:
+                ref = list(filter(lambda x: x['type'] == 'quoted' or x['type'] == 'retweeted',
+                                  user_tweets[k]['referenced_tweets']))
+                if ref:
+                    ref_type = ref[0]['type']
+                    ref_txt = ''
+
+                    if ref_type == 'quoted':
+                        ref_txt = user_tweets[k]['full_text'] + " "
+                    ref_txt += referenced_tweets[ref[0]['id']]['text']
+
+                    user_tweets[k]['retweeted_status'] = {'full_text': ref_txt}
+
+        tweets_metadata = \
+            dict(map(lambda x: (x[0], {'user': user_info['username'],
+                                       'name': user_info['name'],
+                                       'user_details': user_info['description'],
+                                       'mentions': list(
+                                           map(lambda y: y['username'], x[1].get('entities', {}).get('mentions', {}))),
+                                       'hashtags': list(
+                                           map(lambda y: y['tag'], x[1].get('entities', {}).get('hashtags', {}))),
+                                       'retweet_count': x[1]['public_metrics']['retweet_count'],
+                                       'favorite_count': x[1]['public_metrics']['like_count'],
+                                       'created_at': x[1]['created_at'],
+                                       'account_creation': user_info['created_at'],
+                                       'account_followers': user_info['public_metrics']['followers_count'],
+                                       'account_following': user_info['public_metrics']['following_count'],
+                                       'account_statuses': user_info['public_metrics']['tweet_count'],
+                                       'account_verified': user_info['verified']}),
+                     user_tweets.items()))
+
+        if 'includes' in tweets_raw:
+            self._fill_user_info(tweets_raw['includes'])
+
+        return user_tweets, tweets_metadata, tweets_raw['meta'].get('next_token', None)
+
+    def get_user_tweets(self, username):
+        remaining_number_of_tweets = self.config.max_tweets_per_user
+        next_token = None
+        user_tweets_acc = {}
+        tweets_metadata_acc = {}
+        while remaining_number_of_tweets > 0:
+            number_of_tweets = 100 if remaining_number_of_tweets > 100 else remaining_number_of_tweets
+            remaining_number_of_tweets -= number_of_tweets
+            user_tweets, tweets_metadata, next_token = self._get_user_tweets(username, number_of_tweets, next_token)
+            user_tweets_acc.update(user_tweets)
+            tweets_metadata_acc.update(tweets_metadata)
+            if not next_token:
+                break
+        return user_tweets_acc, tweets_metadata_acc
+
+    def reshape_node_data(self, node_df):
+        node_df = node_df[
+            ['user', 'name', 'user_details', 'spikyball_hop', 'account_creation',
+             'account_followers', 'account_following',
+             'account_statuses', 'account_verified']]
+        node_df = node_df.reset_index().groupby('user').max().rename(columns={'index': 'max_tweet_id'})
+        return node_df
+
+
+class TwitterNetwork:
+    class TwitterNodeInfo(NodeInfo):
+        def __init__(self, user_hashtags=None, user_tweets=None, tweets_meta=pd.DataFrame()):
+            self.user_hashtags = user_hashtags if user_hashtags else {}
+            self.user_tweets = user_tweets if user_tweets else {}
+            self.tweets_meta = tweets_meta
+
+        def update(self, new_info):
+            self.user_hashtags.update(new_info.user_hashtags)
+            self.user_tweets.update(new_info.user_tweets)
+
+        def get_nodes(self):
+            return self.tweets_meta
+
+    def __init__(self, credentials, config):
+        if config.api_version == 1:
+            self.tweets_getter = TweetsGetterV1(credentials, config)
+        elif config.api_version == 2:
+            self.tweets_getter = TweetsGetterV2(credentials, config)
+        else:
+            raise ValueError("Invalid api version")
+        self.config = config
+
+    def create_node_info(self):
+        return self.TwitterNodeInfo()
+
+    def get_neighbors(self, user):
+        if not isinstance(user, str):
+            return self.TwitterNodeInfo(), pd.DataFrame()
+        tweets_dic, tweets_meta = self.tweets_getter.get_user_tweets(user)
+        edges_df, node_info = self.edges_nodes_from_user(tweets_meta, tweets_dic)
+
+        # replace user and mentions by source and target
+        if not edges_df.empty:
+            edges_df.index.names = ['source', 'target']
+            edges_df.reset_index(level=['source', 'target'], inplace=True)
+
+        return node_info, edges_df
+
+    def filter(self, node_info, edges_df):
+        # filter edges according to node properties
+        # filter according to edges properties
+        edges_df = self.filter_edges(edges_df)
+        return node_info, edges_df
+
+    def filter_edges(self, edges_df):
+        # filter edges according to their properties
+        if edges_df.empty:
+            return edges_df
+        return edges_df[edges_df['weight'] >= self.config.min_mentions]
+
+    def neighbors_list(self, edges_df):
+        if edges_df.empty:
+            return edges_df
+        users_connected = edges_df['target'].tolist()
+        return users_connected
+
+    def neighbors_with_weights(self, edges_df):
+        user_list = self.neighbors_list(edges_df)
+        return dict.fromkeys(user_list, 1)
+
+    ###############################################################
+    # Functions for extracting tweet info from the twitter API
+    ###############################################################
 
     def edges_nodes_from_user(self, tweets_meta, tweets_dic):
         # Make an edge and node property dataframes
@@ -190,16 +366,8 @@ class TwitterNetwork:
     ## Utils functions for the graph
     #####################################################
 
-    def reshape_node_data(self, node_df):
-        node_df = node_df[
-            ['user', 'name', 'user_details', 'spikyball_hop', 'account_creation', 'account_default_profile',
-             'account_default_profile_image', 'account_favourites', 'account_followers', 'account_following',
-             'account_statuses', 'account_verified']]
-        node_df = node_df.reset_index().groupby('user').max().rename(columns={'index': 'max_tweet_id'})
-        return node_df
-
     def add_graph_attributes(self, g, nodes_df, edges_df, nodes_info):
         g = add_edges_attributes(g, edges_df, drop_cols=['tweet_id', 'degree_target', 'degree_source'])
-        g = add_node_attributes(g, self.reshape_node_data(nodes_df), attr_dic=nodes_info.user_hashtags,
+        g = add_node_attributes(g, self.tweets_getter.reshape_node_data(nodes_df), attr_dic=nodes_info.user_hashtags,
                                 attr_name='all_hashtags')
         return g
