@@ -28,7 +28,7 @@ def explore(backend, initial_nodes, config, progress_callback=None):
     nodes_list, nodes_df, edges_df, nodes_info = spiky_ball(initial_nodes,
                                                             backend,
                                                             config.data_collection,
-                                                            node_acc=backend.get_node_info(),
+                                                            node_acc=backend.create_node_info(),
                                                             progress_callback=progress_callback
                                                             )
     # create graph from edge list

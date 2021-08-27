@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 
 class WikipediaNetwork:
     class WikipediaNodeInfo(NodeInfo):
-        def __init__(self, page_info={}, nodes_df=pd.DataFrame()):
-            self.page_info = page_info
+        def __init__(self, page_info=None, nodes_df=pd.DataFrame()):
+            self.page_info = page_info if page_info else {}
             self.nodes_df = nodes_df
 
         def update(self, new_info):
@@ -25,7 +25,7 @@ class WikipediaNetwork:
         self.api = wikipediaapi.Wikipedia(config.lang)
         self.config = config
 
-    def get_node_info(self):
+    def create_node_info(self):
         return self.WikipediaNodeInfo()
 
     def get_neighbors(self, page):

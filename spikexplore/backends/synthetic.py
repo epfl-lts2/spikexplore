@@ -20,7 +20,7 @@ class SyntheticNetwork:
 		self.G = g
 		self.config = config
 
-	def get_node_info(self):
+	def create_node_info(self):
 		return self.SynthNodeInfo()
 
 	def get_neighbors(self, node_id):

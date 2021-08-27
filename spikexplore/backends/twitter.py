@@ -256,9 +256,9 @@ class TweetsGetterV2:
 
 class TwitterNetwork:
     class TwitterNodeInfo(NodeInfo):
-        def __init__(self, user_hashtags={}, user_tweets={}, tweets_meta=pd.DataFrame()):
-            self.user_hashtags = user_hashtags
-            self.user_tweets = user_tweets
+        def __init__(self, user_hashtags=None, user_tweets=None, tweets_meta=pd.DataFrame()):
+            self.user_hashtags = user_hashtags if user_hashtags else {}
+            self.user_tweets = user_tweets if user_tweets else {}
             self.tweets_meta = tweets_meta
 
         def update(self, new_info):
@@ -277,7 +277,7 @@ class TwitterNetwork:
             raise ValueError("Invalid api version")
         self.config = config
 
-    def get_node_info(self):
+    def create_node_info(self):
         return self.TwitterNodeInfo()
 
     def get_neighbors(self, user):
