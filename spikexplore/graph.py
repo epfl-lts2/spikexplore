@@ -88,6 +88,9 @@ def detect_communities(G):
     else:
         Gu = G
     partition = community.best_partition(Gu, weight='weight')
+    if not partition.values():
+        logger.warning('No communities found in graph')
+        return G, {}
     nx.set_node_attributes(G, partition, name='community')
     logger.debug('Communities saved on the graph as node attributes.')
     nb_partitions = max(partition.values()) + 1
