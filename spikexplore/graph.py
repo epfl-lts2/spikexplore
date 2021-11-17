@@ -57,6 +57,8 @@ def add_node_attributes(graph, node_df, attr_dic=None, attr_name=''):
 
 
 def add_edges_attributes(g, edges_df, drop_cols=None):
+    if edges_df.empty:
+        return g
     if drop_cols:
         edge_attr_df = edges_df.drop(columns=drop_cols)
     else:
