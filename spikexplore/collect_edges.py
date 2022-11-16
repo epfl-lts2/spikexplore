@@ -155,8 +155,8 @@ def spiky_ball(initial_node_list, graph_handle, cfg,
         logger.debug('new edges:{} subset:{} in_edges:{}'.format(len(edges_df_out), len(new_edges), len(edges_df_in)))
 
     logger.debug('Nb of layers reached: {}'.format(depth))
-	if not total_edges_df.empty:
-    	total_edges_df = total_edges_df.sort_values('weight', ascending=False)
+    if not total_edges_df.empty:
+        total_edges_df = total_edges_df.sort_values('weight', ascending=False)
 
     return total_node_list, total_nodes_df, total_edges_df, node_acc
 
