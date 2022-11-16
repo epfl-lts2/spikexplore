@@ -29,6 +29,8 @@ def convert_to_json(edge_df):
 def graph_from_edgeslist(edge_df, min_weight=0):
     logger.debug('Creating the graph from the edge list')
     # The indices in the dataframe are source and target for the edges
+    if edge_df.empty:
+        return nx.empty_graph()
     G = nx.from_pandas_edgelist(edge_df[edge_df['weight'] >= min_weight],
                                 source='source', target='target', create_using=nx.DiGraph)
     logger.info('Nb of nodes: {}'.format(G.number_of_nodes()))
