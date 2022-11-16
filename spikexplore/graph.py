@@ -133,10 +133,10 @@ def process_hop(graph_handle, node_list, nodes_info_acc):
         node_info, edges_df = graph_handle.get_neighbors(node)
         node_info, edges_df = graph_handle.filter(node_info, edges_df)
 
-        total_nodes_df = total_nodes_df.append(node_info.get_nodes())
+        total_nodes_df = pd.concat([total_nodes_df, node_info.get_nodes()])
         nodes_info_acc.update(node_info)  # add new info
 
-        total_edges_df = total_edges_df.append(edges_df)
+        total_edges_df = pd.concat([total_edges_df, edges_df])
         neighbors_dic = graph_handle.neighbors_with_weights(edges_df)
         new_node_dic = combine_dicts(new_node_dic, neighbors_dic)
 

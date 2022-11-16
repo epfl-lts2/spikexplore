@@ -144,11 +144,9 @@ def spiky_ball(initial_node_list, graph_handle, cfg,
         total_node_list = total_node_list + new_node_list
         edges_df_in, edges_df_out = split_edges(edges_df, total_node_list)
 
-        # Equivalent of add to graph
-        total_edges_df = total_edges_df.append(edges_df_in)
-        total_nodes_df = total_nodes_df.append(nodes_df)
-        # add the edges linking the new nodes
-        total_edges_df = total_edges_df.append(new_edges)
+        # add edges linking to new nodes
+        total_edges_df = pd.concat([total_edges_df, edges_df_in, new edges])
+        total_nodes_df = pd.concat([total_nodes_df, nodes_df])
         
         new_node_list, new_edges = random_subset(edges_df_out, expansion_type, mode=random_subset_mode,
                                                  mode_value=random_subset_size, coeff=degree)
@@ -157,7 +155,8 @@ def spiky_ball(initial_node_list, graph_handle, cfg,
         logger.debug('new edges:{} subset:{} in_edges:{}'.format(len(edges_df_out), len(new_edges), len(edges_df_in)))
 
     logger.debug('Nb of layers reached: {}'.format(depth))
-    total_edges_df = total_edges_df.sort_values('weight', ascending=False)
+	if not total_edges_df.empty:
+    	total_edges_df = total_edges_df.sort_values('weight', ascending=False)
 
     return total_node_list, total_nodes_df, total_edges_df, node_acc
 
