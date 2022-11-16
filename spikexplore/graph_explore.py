@@ -7,6 +7,8 @@ import networkx as nx
 def create_graph(backend, nodes_df, edges_df, nodes_info, config):
     min_weight = config.min_weight
     g = graph_from_edgeslist(edges_df, min_weight=min_weight)
+    if nx.is_empty(g):
+        return g
     g = backend.add_graph_attributes(g, nodes_df, edges_df, nodes_info)
     g = reduce_graph(g, config.min_degree)
     g = handle_spikyball_neighbors(g, backend)
