@@ -145,7 +145,7 @@ def spiky_ball(initial_node_list, graph_handle, cfg,
         edges_df_in, edges_df_out = split_edges(edges_df, total_node_list)
 
         # add edges linking to new nodes
-        total_edges_df = pd.concat([total_edges_df, edges_df_in, new edges])
+        total_edges_df = pd.concat([total_edges_df, edges_df_in, new_edges])
         total_nodes_df = pd.concat([total_nodes_df, nodes_df])
         
         new_node_list, new_edges = random_subset(edges_df_out, expansion_type, mode=random_subset_mode,
