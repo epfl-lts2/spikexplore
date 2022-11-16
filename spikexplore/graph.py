@@ -29,6 +29,8 @@ def convert_to_json(edge_df):
 def graph_from_edgeslist(edge_df, min_weight=0):
     logger.debug('Creating the graph from the edge list')
     # The indices in the dataframe are source and target for the edges
+    if edge_df.empty:
+        return nx.empty_graph()
     G = nx.from_pandas_edgelist(edge_df[edge_df['weight'] >= min_weight],
                                 source='source', target='target', create_using=nx.DiGraph)
     logger.info('Nb of nodes: {}'.format(G.number_of_nodes()))
@@ -133,10 +135,10 @@ def process_hop(graph_handle, node_list, nodes_info_acc):
         node_info, edges_df = graph_handle.get_neighbors(node)
         node_info, edges_df = graph_handle.filter(node_info, edges_df)
 
-        total_nodes_df = total_nodes_df.append(node_info.get_nodes())
+        total_nodes_df = pd.concat([total_nodes_df, node_info.get_nodes()])
         nodes_info_acc.update(node_info)  # add new info
 
-        total_edges_df = total_edges_df.append(edges_df)
+        total_edges_df = pd.concat([total_edges_df, edges_df])
         neighbors_dic = graph_handle.neighbors_with_weights(edges_df)
         new_node_dic = combine_dicts(new_node_dic, neighbors_dic)
 

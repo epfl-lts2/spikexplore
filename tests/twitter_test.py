@@ -43,4 +43,7 @@ class TwitterGraphSampling(unittest.TestCase):
         self.assertTrue(g_sub.number_of_nodes() > 5)
         self.assertTrue(g_sub.number_of_edges() > 10)
 
-
+    def test_empty_graph(self):
+        g_sub, _ = graph_explore.explore(self.sampling_backend, ['#InvalidUsername'], self.sampling_config)
+        self.assertTrue(g_sub.number_of_nodes() == 0)
+        self.assertTrue(g_sub.number_of_edges() == 0) 

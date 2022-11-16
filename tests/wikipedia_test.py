@@ -46,3 +46,8 @@ class WikipediaGraphSampling(unittest.TestCase):
         self.assertTrue(g_sub.number_of_edges() > 700)
         self.assertTrue(nx.is_connected(g_sub))
         self.assertTrue(set(g_sub.nodes()).intersection(self.wiki_config.pages_ignored) == set())
+
+    def test_empty_graph(self):
+        g_sub, _ = graph_explore.explore(self.sampling_backend, ['Non existent page of wikipedia forever'], self.sampling_config)
+        self.assertTrue(g_sub.number_of_nodes() == 0)
+        self.assertTrue(g_sub.number_of_edges() == 0)

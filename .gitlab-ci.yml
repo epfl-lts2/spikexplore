@@ -1,0 +1,29 @@
+image: python:3.9
+
+stages:
+  - test
+
+variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+    paths:
+      - .cache/pip
+      - venv/
+
+before_script:
+  - export LANG=en_US.UTF-8
+  - export LANGUAGE=en_US:en
+  - export LC_ALL=en_US.UTF-8
+  - python -m pip install --upgrade pip
+  - python -m pip install virtualenv
+  - virtualenv venv
+  - source venv/bin/activate
+  - pip install --upgrade -r requirements.txt
+  - pip install black pytest
+
+Tests:
+  stage: test
+  script:
+    - python -m pytest tests
+
