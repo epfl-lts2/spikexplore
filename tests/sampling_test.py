@@ -7,7 +7,6 @@ from spikexplore.config import SamplingConfig, GraphConfig, DataCollectionConfig
 
 
 class SyntheticGraphSamplingTest(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
         nodes = 5000
@@ -16,9 +15,9 @@ class SyntheticGraphSamplingTest(unittest.TestCase):
         cls.G = nx.barabasi_albert_graph(nodes, edges_per_node)
         cls.sampling_backend = SyntheticNetwork(cls.G, cls.config)
         graph_config = GraphConfig(min_degree=1, min_weight=1, community_detection=False)
-        data_collection_config = DataCollectionConfig(exploration_depth=3, random_subset_mode="percent",
-                                                      random_subset_size=20, expansion_type="coreball",
-                                                      degree=2, max_nodes_per_hop=1000)
+        data_collection_config = DataCollectionConfig(
+            exploration_depth=3, random_subset_mode="percent", random_subset_size=20, expansion_type="coreball", degree=2, max_nodes_per_hop=1000
+        )
         cls.sampling_config = SamplingConfig(graph_config, data_collection_config)
 
     def test_sampling_coreball(self):

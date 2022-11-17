@@ -1,6 +1,7 @@
 image: python:3.9
 
 stages:
+  - format
   - test
 
 variables:
@@ -21,6 +22,11 @@ before_script:
   - source venv/bin/activate
   - pip install --upgrade -r requirements.txt
   - pip install black pytest
+
+Formatting:
+  stage: format
+  script:
+    - black --check -l 150 .
 
 Tests:
   stage: test

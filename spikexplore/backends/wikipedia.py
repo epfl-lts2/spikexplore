@@ -34,20 +34,20 @@ class WikipediaNetwork:
         p = self.api.page(page)
         links = list(p.links.keys())
         ns = [v.namespace for k, v in p.links.items()]
-        edges_df = pd.DataFrame(links, columns=['target'])
-        edges_df['source'] = p.title
-        edges_df = edges_df.reindex(columns=['source', 'target'])
+        edges_df = pd.DataFrame(links, columns=["target"])
+        edges_df["source"] = p.title
+        edges_df = edges_df.reindex(columns=["source", "target"])
 
-        edges_df['weight'] = 1.0
-        edges_df['target_ns'] = ns
+        edges_df["weight"] = 1.0
+        edges_df["target_ns"] = ns
 
-        node_info = self.WikipediaNodeInfo({p.title: []}, pd.DataFrame([p.title], columns=['title']))
+        node_info = self.WikipediaNodeInfo({p.title: []}, pd.DataFrame([p.title], columns=["title"]))
         return node_info, edges_df
 
     def neighbors_list(self, edges_df):
         if edges_df.empty:
             return edges_df
-        pages_connected = edges_df['target'].tolist()
+        pages_connected = edges_df["target"].tolist()
         return pages_connected
 
     def neighbors_with_weights(self, edges_df):
@@ -55,14 +55,14 @@ class WikipediaNetwork:
         return dict.fromkeys(pages_list, 1)
 
     def filter(self, node_info, edges_df):
-        logger.debug('Filtering {} edges'.format(len(edges_df)))
-        edges_bl_df = edges_df[~edges_df['target'].isin(self.config.pages_ignored)]
-        edges_df_filt = edges_bl_df[edges_bl_df['target_ns'] == 0]  # only keep links to articles
-        logger.debug('{} edges remaining after filtering'.format(len(edges_df_filt)))
+        logger.debug("Filtering {} edges".format(len(edges_df)))
+        edges_bl_df = edges_df[~edges_df["target"].isin(self.config.pages_ignored)]
+        edges_df_filt = edges_bl_df[edges_bl_df["target_ns"] == 0]  # only keep links to articles
+        logger.debug("{} edges remaining after filtering".format(len(edges_df_filt)))
         return node_info, edges_df_filt
 
     def reshape_node_data(self, nodes_df):
-        nodes_df.set_index('title', inplace=True)
+        nodes_df.set_index("title", inplace=True)
         return nodes_df
 
     def add_graph_attributes(self, g, nodes_df, edges_df, nodes_info):

@@ -26,13 +26,10 @@ def create_graph(backend, nodes_df, edges_df, nodes_info, config):
 
 def explore(backend, initial_nodes, config, progress_callback=None):
     if not initial_nodes:
-        raise ValueError('Cannot start without initial nodes.')
-    nodes_list, nodes_df, edges_df, nodes_info = spiky_ball(initial_nodes,
-                                                            backend,
-                                                            config.data_collection,
-                                                            node_acc=backend.create_node_info(),
-                                                            progress_callback=progress_callback
-                                                            )
+        raise ValueError("Cannot start without initial nodes.")
+    nodes_list, nodes_df, edges_df, nodes_info = spiky_ball(
+        initial_nodes, backend, config.data_collection, node_acc=backend.create_node_info(), progress_callback=progress_callback
+    )
     # create graph from edge list
     g = create_graph(backend, nodes_df, edges_df, nodes_info, config.graph)
 
