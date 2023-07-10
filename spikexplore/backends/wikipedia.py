@@ -22,7 +22,7 @@ class WikipediaNetwork:
             return self.nodes_df
 
     def __init__(self, config):
-        self.api = wikipediaapi.Wikipedia(config.lang)
+        self.api = wikipediaapi.Wikipedia(user_agent=config.user_agent, language=config.lang)
         self.config = config
 
     def create_node_info(self):

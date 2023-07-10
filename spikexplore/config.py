@@ -48,5 +48,6 @@ class SyntheticConfig:
 
 @dataclass
 class WikipediaConfig:
+    user_agent: str = ""
     lang: str = "en"
     pages_ignored = []

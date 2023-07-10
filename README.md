@@ -21,5 +21,6 @@ DOI = {10.3390/a13110275}
 
 So far this implementation supports:
 - synthetic graphs using [NetworkX](https://networkx.org/)
-- Twitter using [v1 API](https://developer.twitter.com/en/docs/twitter-api/api-reference-index) through [Twython](https://twython.readthedocs.io/en/latest/)
+- ~~Twitter using [v1 API](https://developer.twitter.com/en/docs/twitter-api/api-reference-index) through [Twython](https://twython.readthedocs.io/en/latest/)~~ 
+Twitter API is no longer available unless you pay. Latest version supporting it is v0.0.12. 
 - Wikipedia using [Mediawiki API](https://www.mediawiki.org/wiki/API:Main_page) through [Wikipedia-API](https://pypi.org/project/Wikipedia-API/)
