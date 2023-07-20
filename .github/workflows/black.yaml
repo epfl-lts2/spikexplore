@@ -11,5 +11,5 @@ jobs:
         with:
           options: "--check -l 150"
           src: "."
-          version: "~= 22.0"
+          version: "~= 22.12.0"
 

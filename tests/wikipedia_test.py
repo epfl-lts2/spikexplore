@@ -8,7 +8,7 @@ from spikexplore.config import SamplingConfig, GraphConfig, DataCollectionConfig
 class WikipediaGraphSampling(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.wiki_config = WikipediaConfig(lang="en")
+        cls.wiki_config = WikipediaConfig(user_agent="SpikexploreBot/1.0 (https://github.com/epfl-lts2/spikexplore; lts2@epfl.ch)", lang="en")
         #  Partial ignore list of not so interesting identifiers
         #  A huge number of pages link to those...
         cls.wiki_config.pages_ignored = [
