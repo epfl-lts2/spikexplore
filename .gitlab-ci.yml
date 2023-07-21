@@ -21,7 +21,7 @@ before_script:
   - virtualenv venv
   - source venv/bin/activate
   - pip install --upgrade -r requirements.txt
-  - pip install black pytest
+  - pip install black==22.12 pytest
 
 Formatting:
   stage: format
