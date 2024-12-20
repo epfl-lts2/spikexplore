@@ -9,9 +9,7 @@ from spikexplore.config import SamplingConfig, GraphConfig, DataCollectionConfig
 class BlueskyGraphSampling(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        bsky_credentials = BlueskyCredentials(
-            os.getenv("BSKY_HANDLE", ""), os.getenv("BSKY_PASSWORD", "")
-        )
+        bsky_credentials = BlueskyCredentials(os.getenv("BSKY_HANDLE", ""), os.getenv("BSKY_PASSWORD", ""))
 
         cls.bluesky_config = BlueskyConfig()
         cls.bluesky_config.users_to_remove = ["threader_app", "threadreaderapp"]

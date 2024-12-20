@@ -9,6 +9,7 @@ from spikexplore.graph import add_node_attributes, add_edges_attributes
 
 logger = logging.getLogger(__name__)
 
+
 class BlueskyCredentials:
     def __init__(self, handle, password):
         self.handle = handle
@@ -33,7 +34,6 @@ class SkeetsGetter:
         skeets_filt = filter(lambda t: datetime.strptime(t.post.record["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ") >= days_limit, skeets)
         return list(skeets_filt)
 
-
     def get_profile(self, did):
         handle = self.profiles_cache.get(did)
         if handle is not None:
@@ -50,8 +50,11 @@ class SkeetsGetter:
             return []
         if skeet.record.facets is None:
             return []
-        return [getattr(f.features[0], self.features_attrs[data]) for f in
-                skeet.record.facets if f.features[0].py_type == f"app.bsky.richtext.facet#{data}"]
+        return [
+            getattr(f.features[0], self.features_attrs[data])
+            for f in skeet.record.facets
+            if f.features[0].py_type == f"app.bsky.richtext.facet#{data}"
+        ]
 
     def get_user_skeets(self, username):
         # Collect skeets from a username/did
@@ -60,9 +63,7 @@ class SkeetsGetter:
 
         # Test if ok
         try:
-            user_skeets_raw = self.bsky_client.get_author_feed(
-                actor=username, limit=count
-            ).feed
+            user_skeets_raw = self.bsky_client.get_author_feed(actor=username, limit=count).feed
             # remove old tweets
             user_skeets_filt = self._filter_old_skeets(user_skeets_raw)
             # make a dictionary
@@ -95,7 +96,6 @@ class SkeetsGetter:
         except Exception as e:
             logger.error("Error in getting user skeets: ", e)
             return {}, {}
-
 
     def reshape_node_data(self, node_df):
         # user name user_details mentions hashtags retweet_count favorite_count
@@ -186,10 +186,10 @@ class BlueskyNetwork:
         return self.skeets_getter.get_profile(did)
 
     def match_usernames(self, meta_df):
-        mask = meta_df['mentions'].str.startswith("did:")
-        meta_df.loc[mask, 'mentions'] = meta_df.loc[mask, 'mentions'].apply(self.did_to_handle)
+        mask = meta_df["mentions"].str.startswith("did:")
+        meta_df.loc[mask, "mentions"] = meta_df.loc[mask, "mentions"].apply(self.did_to_handle)
 
-        return meta_df.dropna(subset=['mentions'])
+        return meta_df.dropna(subset=["mentions"])
 
     def get_edges(self, skeets_meta):
         if not skeets_meta:
@@ -227,8 +227,12 @@ class BlueskyNetwork:
         skeets_meta_kept = meta_df.head(nb_popular_skeets)
         skeets_kept = {k: skeets_dic[k] for k in skeets_meta_kept.index.to_list()}
         # Get most popular tweets of user
-        return self.BlueskyNodeInfo(user_hashtags={user_name: user_hashtags["count"]}, user_skeets=skeets_kept,
-                                    user_links={user_name: user_links["count"]}, skeets_meta=skeets_meta_kept)
+        return self.BlueskyNodeInfo(
+            user_hashtags={user_name: user_hashtags["count"]},
+            user_skeets=skeets_kept,
+            user_links={user_name: user_links["count"]},
+            skeets_meta=skeets_meta_kept,
+        )
 
     #####################################################
     ## Utils functions for the graph
@@ -238,8 +242,3 @@ class BlueskyNetwork:
         g = add_edges_attributes(g, edges_df, drop_cols=["cid", "degree_target", "degree_source"])
         g = add_node_attributes(g, self.skeets_getter.reshape_node_data(nodes_df), attr_dic=nodes_info.user_hashtags, attr_name="all_hashtags")
         return g
-
-
-
-
-
