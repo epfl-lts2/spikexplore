@@ -134,8 +134,8 @@ def process_hop(graph_handle, node_list, nodes_info_acc):
 
         total_nodes_df = pd.concat([total_nodes_df, node_info.get_nodes()])
         nodes_info_acc.update(node_info)  # add new info
-
-        total_edges_df = pd.concat([total_edges_df, edges_df])
+        if not edges_df.empty:
+            total_edges_df = pd.concat([total_edges_df, edges_df]).groupby(["source", "target"]).sum().reset_index()
         neighbors_dic = graph_handle.neighbors_with_weights(edges_df)
         new_node_dic = combine_dicts(new_node_dic, neighbors_dic)
 

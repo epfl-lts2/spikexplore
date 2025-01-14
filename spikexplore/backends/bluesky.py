@@ -3,7 +3,7 @@ import networkx as nx
 import time
 import logging
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from spikexplore.NodeInfo import NodeInfo
 from spikexplore.graph import add_node_attributes, add_edges_attributes
 
@@ -31,19 +31,24 @@ class SkeetsGetter:
             return skeets
 
         days_limit = datetime.now() - timedelta(days=max_day_old)
-        skeets_filt = filter(lambda t: datetime.strptime(t.post.record["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ") >= days_limit, skeets)
+        skeets_filt = filter(
+            lambda t: datetime.fromisoformat(t.post.record["created_at"].replace("Z", "+00:00")).replace(tzinfo=None) >= days_limit, skeets
+        )
         return list(skeets_filt)
 
     def get_profile(self, did):
         handle = self.profiles_cache.get(did)
         if handle is not None:
             return handle
-
-        p = self.bsky_client.get_profile(did)
-        if p is not None:
-            self.profiles_cache[did] = p.handle
-            return p.handle
-        return None
+        try:
+            p = self.bsky_client.get_profile(did)
+            if p is not None:
+                self.profiles_cache[did] = p.handle
+                return p.handle
+        except Exception as e:
+            logger.error("Error in getting profile: ", e)
+        finally:
+            return None
 
     def facet_data(self, skeet, data):
         if not hasattr(skeet, "record"):
@@ -86,6 +91,7 @@ class SkeetsGetter:
                         "links": self.facet_data(x[1], "link"),
                         "repost_count": x[1].repost_count,
                         "favorite_count": x[1].like_count,
+                        "reply_to": x[1].reply.parent.author.handle if hasattr(x[1], "reply") else [],
                         "created_at": x[1].record.created_at,
                         "account_creation": x[1].author.created_at,
                     },
@@ -98,9 +104,6 @@ class SkeetsGetter:
             return {}, {}
 
     def reshape_node_data(self, node_df):
-        # user name user_details mentions hashtags retweet_count favorite_count
-        # created_at account_creation account_followers account_following account_statuses account_favourites
-        # account_verified account_default_profile account_default_profile_image spikyball_hop
         node_df = node_df[
             [
                 "user_did",
@@ -110,7 +113,7 @@ class SkeetsGetter:
                 "account_creation",
             ]
         ]
-        node_df = node_df.reset_index().groupby("user_did").max().rename(columns={"index": "max_tweet_id"})
+        node_df = node_df.reset_index().groupby("user").max().rename(columns={"index": "last_skeet_id"})
         return node_df
 
 
@@ -141,7 +144,7 @@ class BlueskyNetwork:
         if not isinstance(user, str):
             return self.BlueskyNodeInfo(), pd.DataFrame()
         skeets_dic, skeets_meta = self.skeets_getter.get_user_skeets(user)
-        edges_df, node_info = self.edges_nodes_from_user(skeets_meta, skeets_dic)
+        edges_df, node_info = self.edges_nodes_from_user(user, skeets_meta, skeets_dic)
 
         # replace user and mentions by source and target
         if not edges_df.empty:
@@ -163,12 +166,12 @@ class BlueskyNetwork:
         return edges_df[edges_df["weight"] >= self.config.min_mentions]
 
     def neighbors_list(self, edges_df):
-        if edges_df.empty:
-            return edges_df
         users_connected = edges_df["target"].tolist()
         return users_connected
 
     def neighbors_with_weights(self, edges_df):
+        if edges_df.empty:
+            return {}
         user_list = self.neighbors_list(edges_df)
         return dict.fromkeys(user_list, 1)
 
@@ -176,9 +179,9 @@ class BlueskyNetwork:
     # Functions for extracting skeet info from the bluesky API
     ###############################################################
 
-    def edges_nodes_from_user(self, skeets_meta, skeets_dic):
+    def edges_nodes_from_user(self, user, skeets_meta, skeets_dic):
         # Make an edge and node property dataframes
-        edges_df = self.get_edges(skeets_meta)
+        edges_df = self.get_edges(user, skeets_meta)
         user_info = self.get_nodes_properties(skeets_meta, skeets_dic)
         return edges_df, user_info
 
@@ -191,24 +194,42 @@ class BlueskyNetwork:
 
         return meta_df.dropna(subset=["mentions"])
 
-    def get_edges(self, skeets_meta):
+    def get_edges(self, user, skeets_meta):
         if not skeets_meta:
             return pd.DataFrame()
         # Create the user -> mention table with their properties fom the list of tweets of a user
-        meta_df = pd.DataFrame.from_dict(skeets_meta, orient="index").explode("mentions").dropna()
+        mentions_df = pd.DataFrame.from_dict(skeets_meta, orient="index")
+        mentions_df["full_mentions"] = mentions_df["mentions"] + mentions_df["reply_to"]  # a reply is a kind of mention
+        mentions_df = (
+            mentions_df.drop(columns=["reply_to", "mentions"]).explode("full_mentions").dropna().rename(columns={"full_mentions": "mentions"})
+        )
         # Some bots to be removed from the collection
         users_to_remove = self.config.users_to_remove
 
         # mentions can be dids so need to translate that first into user handles
-        meta_df = self.match_usernames(meta_df)
-        filtered_meta_df = meta_df[~meta_df["mentions"].isin(users_to_remove) & ~meta_df["mentions"].isin(meta_df["user"])]
+        mentions_df = self.match_usernames(mentions_df)
+        filtered_mentions_df = mentions_df[~mentions_df["mentions"].isin(users_to_remove) & ~mentions_df["mentions"].isin(mentions_df["user"])]
 
         # group by mentions and keep list of tweets for each mention
-        tmp = filtered_meta_df.groupby(["user", "mentions"]).apply(lambda x: (x.index.tolist(), len(x.index)))
+        tmp = filtered_mentions_df.groupby(["user", "mentions"]).apply(lambda x: (x.index.tolist(), len(x.index)), include_groups=False)
         if tmp.empty:
-            return tmp
-        edge_df = pd.DataFrame(tmp.tolist(), index=tmp.index).rename(columns={0: "cid", 1: "weight"})
-        return edge_df
+            edge_mentions_df = pd.DataFrame([], columns=["source", "target", "cid", "weight"])
+        else:
+            edge_mentions_df = pd.DataFrame(tmp.tolist(), index=tmp.index).rename(columns={0: "cid", 1: "weight"})
+            edge_mentions_df.index.names = ["source", "target"]
+        # Now get reposts
+        repost_df = pd.DataFrame.from_dict(skeets_meta, orient="index")
+        repost_df["source_user"] = user
+        # remove self edges
+        repost_df = repost_df[repost_df["user"] != repost_df["source_user"]]
+        tmp = repost_df.groupby(["source_user", "user"]).apply(lambda x: (x.index.tolist(), len(x.index)), include_groups=False)
+        if tmp.empty:
+            edge_repost_df = pd.DataFrame([], columns=["source", "target", "cid", "weight"])
+        else:
+            edge_repost_df = pd.DataFrame(tmp.tolist(), index=tmp.index).rename(columns={0: "cid", 1: "weight"})
+            edge_repost_df.index.names = ["source", "target"]
+        edges_df = pd.concat([edge_mentions_df, edge_repost_df]).groupby(["source", "target"]).sum()
+        return edges_df
 
     def get_nodes_properties(self, skeets_meta, skeets_dic):
         if not skeets_meta:
@@ -239,6 +260,6 @@ class BlueskyNetwork:
     #####################################################
 
     def add_graph_attributes(self, g, nodes_df, edges_df, nodes_info):
-        g = add_edges_attributes(g, edges_df, drop_cols=["cid", "degree_target", "degree_source"])
+        g = add_edges_attributes(g, edges_df, drop_cols=["cid"])
         g = add_node_attributes(g, self.skeets_getter.reshape_node_data(nodes_df), attr_dic=nodes_info.user_hashtags, attr_name="all_hashtags")
         return g

@@ -142,7 +142,10 @@ def spiky_ball(initial_node_list, graph_handle, cfg, node_acc=NodeInfo(), progre
         edges_df_in, edges_df_out = split_edges(edges_df, total_node_list)
 
         # add edges linking to new nodes
-        total_edges_df = pd.concat([total_edges_df, edges_df_in, new_edges])
+        total_edges_df = pd.concat([total_edges_df, edges_df_in])
+        if not new_edges.empty:
+            total_edges_df = pd.concat([total_edges_df, new_edges.drop(columns=["degree_source", "degree_target"])])
+        total_edges_df = total_edges_df.groupby(["source", "target"]).sum().reset_index()
         total_nodes_df = pd.concat([total_nodes_df, nodes_df])
 
         new_node_list, new_edges = random_subset(edges_df_out, expansion_type, mode=random_subset_mode, mode_value=random_subset_size, coeff=degree)
