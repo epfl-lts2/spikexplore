@@ -134,8 +134,8 @@ def spiky_ball(initial_node_list, graph_handle, cfg, node_acc=NodeInfo(), progre
                 new_edges = remove_edges_with_target_nodes(new_edges, new_node_list)
 
         new_node_dic, edges_df, nodes_df, node_acc = process_hop(graph_handle, new_node_list, node_acc)
-        if nodes_df.empty:
-            break
+        if edges_df.empty:
+            continue
         nodes_df["spikyball_hop"] = depth  # Mark the depth of the spiky ball on the nodes
 
         total_node_list = total_node_list + new_node_list

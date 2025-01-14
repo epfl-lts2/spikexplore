@@ -4,6 +4,9 @@ import time
 import logging
 import pandas as pd
 from datetime import datetime, timedelta, timezone
+
+from atproto_client.exceptions import BadRequestError
+
 from spikexplore.NodeInfo import NodeInfo
 from spikexplore.graph import add_node_attributes, add_edges_attributes
 
@@ -99,8 +102,11 @@ class SkeetsGetter:
                 user_skeets.items(),
             )
             return user_skeets, dict(skeets_metadata)
+        except BadRequestError as e:
+            logger.error(f"Error in getting user skeets: code {e.response.status_code} - {e.response.content.message}")
+            return {}, {}
         except Exception as e:
-            logger.error("Error in getting user skeets: ", e)
+            logger.error(f"Error in getting user skeets: {e}")
             return {}, {}
 
     def reshape_node_data(self, node_df):
