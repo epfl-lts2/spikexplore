@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=61.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spikexplore"
+version = "0.2.0"
+authors = [
+    {name = "Nicolas Aspert", email = "nicolas.aspert@epfl.ch"},
+    {name = "Benjamin Ricaud", email = "benjamin.ricaud@uit.no"},
+]
+license = {text = "Apache license"}
+description = "Graph exploration using inhomogeneous filtered diffusion"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.8",
+]
+urls = {Homepage = "https://gitlab.switch.ch/imi-sad/spikexplore"}
+requires-python = ">=3.8"
+dependencies = [
+    "pandas",
+    "numpy",
+    "networkx",
+    "tqdm",
+    "atproto",
+    "wikipedia-api",
+    "python-louvain",
+]
+
+[tool.setuptools]
+packages = ["spikexplore", "spikexplore.backends"]
+script-files = []
+include-package-data = false
