@@ -134,15 +134,18 @@ def spiky_ball(initial_node_list, graph_handle, cfg, node_acc=NodeInfo(), progre
                 new_edges = remove_edges_with_target_nodes(new_edges, new_node_list)
 
         new_node_dic, edges_df, nodes_df, node_acc = process_hop(graph_handle, new_node_list, node_acc)
-        if nodes_df.empty:
-            break
+        if edges_df.empty:
+            continue
         nodes_df["spikyball_hop"] = depth  # Mark the depth of the spiky ball on the nodes
 
         total_node_list = total_node_list + new_node_list
         edges_df_in, edges_df_out = split_edges(edges_df, total_node_list)
 
         # add edges linking to new nodes
-        total_edges_df = pd.concat([total_edges_df, edges_df_in, new_edges])
+        total_edges_df = pd.concat([total_edges_df, edges_df_in])
+        if not new_edges.empty:
+            total_edges_df = pd.concat([total_edges_df, new_edges.drop(columns=["degree_source", "degree_target"])])
+        total_edges_df = total_edges_df.groupby(["source", "target"]).sum().reset_index()
         total_nodes_df = pd.concat([total_nodes_df, nodes_df])
 
         new_node_list, new_edges = random_subset(edges_df_out, expansion_type, mode=random_subset_mode, mode_value=random_subset_size, coeff=degree)

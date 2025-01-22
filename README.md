@@ -24,3 +24,4 @@ So far this implementation supports:
 - ~~Twitter using [v1 API](https://developer.twitter.com/en/docs/twitter-api/api-reference-index) through [Twython](https://twython.readthedocs.io/en/latest/)~~ 
 Twitter API is no longer available unless you pay. Latest version supporting it is v0.0.12. 
 - Wikipedia using [Mediawiki API](https://www.mediawiki.org/wiki/API:Main_page) through [Wikipedia-API](https://pypi.org/project/Wikipedia-API/)
+- Bluesky using [ATProto](https://atproto.blue/en/latest/)

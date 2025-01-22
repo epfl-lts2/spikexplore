@@ -32,13 +32,12 @@ class SamplingConfig:
 
 
 @dataclass
-class TwitterConfig:
+class BlueskyConfig:
     min_mentions: int = 0
     max_day_old: int = 30
-    max_tweets_per_user: int = 200
-    nb_popular_tweets: int = 10
+    max_skeets_per_user: int = 100
+    nb_popular_skeets: int = 10
     users_to_remove = []
-    api_version: int = 1
 
 
 @dataclass
