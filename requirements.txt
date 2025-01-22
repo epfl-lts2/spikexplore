@@ -1,7 +1,0 @@
-numpy
-pandas
-networkx
-tqdm
-wikipedia-api
-python-louvain
-atproto

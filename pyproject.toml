@@ -31,7 +31,11 @@ dependencies = [
     "wikipedia-api",
     "python-louvain",
 ]
-
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "black==24.8.0"
+]
 [tool.setuptools]
 packages = ["spikexplore", "spikexplore.backends"]
 script-files = []
