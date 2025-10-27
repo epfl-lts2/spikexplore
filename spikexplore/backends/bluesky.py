@@ -83,25 +83,27 @@ class SkeetsGetter:
                 if v[1].author.did not in self.profiles_cache:
                     self.profiles_cache[v[1].author.did] = v[1].author.handle
 
-            skeets_metadata = dict(map(
-                lambda x: (
-                    x[0],
-                    {
-                        "user_did": x[1].author.did,
-                        "user": x[1].author.handle,
-                        "name": x[1].author.display_name,
-                        "mentions": self.facet_data(x[1], "mention"),
-                        "hashtags": self.facet_data(x[1], "tag"),
-                        "links": self.facet_data(x[1], "link"),
-                        "repost_count": x[1].repost_count,
-                        "favorite_count": x[1].like_count,
-                        "reply_to": x[1].reply.parent.author.handle if hasattr(x[1], "reply") else [],
-                        "created_at": x[1].record.created_at,
-                        "account_creation": x[1].author.created_at,
-                    },
-                ),
-                user_skeets.items(),
-            ))
+            skeets_metadata = dict(
+                map(
+                    lambda x: (
+                        x[0],
+                        {
+                            "user_did": x[1].author.did,
+                            "user": x[1].author.handle,
+                            "name": x[1].author.display_name,
+                            "mentions": self.facet_data(x[1], "mention"),
+                            "hashtags": self.facet_data(x[1], "tag"),
+                            "links": self.facet_data(x[1], "link"),
+                            "repost_count": x[1].repost_count,
+                            "favorite_count": x[1].like_count,
+                            "reply_to": x[1].reply.parent.author.handle if hasattr(x[1], "reply") else [],
+                            "created_at": x[1].record.created_at,
+                            "account_creation": x[1].author.created_at,
+                        },
+                    ),
+                    user_skeets.items(),
+                )
+            )
             return user_skeets, skeets_metadata
         except BadRequestError as e:
             logger.error(f"Error in getting user skeets: code {e.response.status_code} - {e.response.content.message}")
