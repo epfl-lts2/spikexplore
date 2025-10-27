@@ -1,3 +1,4 @@
+import pandas
 from atproto import Client, client_utils
 import networkx as nx
 import time
@@ -82,7 +83,7 @@ class SkeetsGetter:
                 if v[1].author.did not in self.profiles_cache:
                     self.profiles_cache[v[1].author.did] = v[1].author.handle
 
-            skeets_metadata = map(
+            skeets_metadata = dict(map(
                 lambda x: (
                     x[0],
                     {
@@ -100,8 +101,8 @@ class SkeetsGetter:
                     },
                 ),
                 user_skeets.items(),
-            )
-            return user_skeets, dict(skeets_metadata)
+            ))
+            return user_skeets, skeets_metadata
         except BadRequestError as e:
             logger.error(f"Error in getting user skeets: code {e.response.status_code} - {e.response.content.message}")
             return {}, {}
@@ -135,6 +136,8 @@ class BlueskyNetwork:
             self.user_hashtags.update(new_info.user_hashtags)
             self.user_skeets.update(new_info.user_skeets)
             self.user_links.update(new_info.user_skeets)
+            self.skeets_meta = pandas.concat([self.skeets_meta, new_info.skeets_meta])
+            self.skeets_meta = self.skeets_meta[~self.skeets_meta.index.duplicated(keep="first")]
 
         def get_nodes(self):
             return self.skeets_meta
