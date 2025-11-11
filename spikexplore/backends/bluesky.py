@@ -27,6 +27,7 @@ class SkeetsGetter:
         self.bsky_client = Client()
         self.bsky_client.login(credentials.handle, credentials.password)
         self.profiles_cache = {}
+        self.skeets_cache = {}
         self.features_attrs = {"mention": "did", "tag": "tag", "link": "uri"}
 
     def _filter_old_skeets(self, skeets):
@@ -54,6 +55,23 @@ class SkeetsGetter:
 
         return None
 
+    def get_skeets(self, username):
+        skeets = self.skeets_cache.get(username)
+        if skeets is not None:
+            return skeets
+        user_skeets_raw = self.bsky_client.get_author_feed(actor=username, limit=self.config.max_skeets_per_user).feed
+            # remove old tweets
+        user_skeets_filt = self._filter_old_skeets(user_skeets_raw)
+        
+        self.skeets_cache[username] = {x.post.cid: x.post for x in user_skeets_filt}
+
+        # update profile cache
+        for v in self.skeets_cache[username].items():
+            if v[1].author.did not in self.profiles_cache:
+                self.profiles_cache[v[1].author.did] = self.bsky_client.get_profile(v[1].author.handle)
+
+        return self.skeets_cache[username]
+
     def facet_data(self, skeet, data):
         if not hasattr(skeet, "record"):
             return []
@@ -72,16 +90,8 @@ class SkeetsGetter:
 
         # Test if ok
         try:
-            user_skeets_raw = self.bsky_client.get_author_feed(actor=username, limit=count).feed
-            # remove old tweets
-            user_skeets_filt = self._filter_old_skeets(user_skeets_raw)
-            # make a dictionary
-            user_skeets = {x.post.cid: x.post for x in user_skeets_filt}
-
-            # update profile cache
-            for v in user_skeets.items():
-                if v[1].author.did not in self.profiles_cache:
-                    self.profiles_cache[v[1].author.did] = self.bsky_client.get_profile(v[1].author.handle)
+            
+            user_skeets = self.get_skeets(username)
 
             skeets_metadata = dict(
                 map(
@@ -202,7 +212,10 @@ class BlueskyNetwork:
         return edges_df, user_info
 
     def did_to_handle(self, did):
-        return self.skeets_getter.get_profile(did).handle
+        profile = self.skeets_getter.get_profile(did)
+        if profile is not None:
+            return profile.handle
+        return None
 
     def match_usernames(self, meta_df):
         mask = meta_df["mentions"].str.startswith("did:")
