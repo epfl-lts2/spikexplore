@@ -202,7 +202,7 @@ class BlueskyNetwork:
         return edges_df, user_info
 
     def did_to_handle(self, did):
-        return self.skeets_getter.get_profile(did)
+        return self.skeets_getter.get_profile(did).handle
 
     def match_usernames(self, meta_df):
         mask = meta_df["mentions"].str.startswith("did:")
