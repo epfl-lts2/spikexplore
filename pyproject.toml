@@ -27,7 +27,7 @@ dependencies = [
     "numpy",
     "networkx",
     "tqdm",
-    "atproto",
+    "atproto>=0.0.63",
     "wikipedia-api",
     "python-louvain",
 ]

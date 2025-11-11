@@ -41,18 +41,18 @@ class SkeetsGetter:
         return list(skeets_filt)
 
     def get_profile(self, did):
-        handle = self.profiles_cache.get(did)
-        if handle is not None:
-            return handle
+        profile = self.profiles_cache.get(did)
+        if profile is not None:
+            return profile
         try:
             p = self.bsky_client.get_profile(did)
             if p is not None:
-                self.profiles_cache[did] = p.handle
-                return p.handle
+                self.profiles_cache[did] = p
+                return p
         except Exception as e:
             logger.error("Error in getting profile: ", e)
-        finally:
-            return None
+        
+        return None
 
     def facet_data(self, skeet, data):
         if not hasattr(skeet, "record"):
@@ -81,7 +81,7 @@ class SkeetsGetter:
             # update profile cache
             for v in user_skeets.items():
                 if v[1].author.did not in self.profiles_cache:
-                    self.profiles_cache[v[1].author.did] = v[1].author.handle
+                    self.profiles_cache[v[1].author.did] = self.bsky_client.get_profile(v[1].author.handle)
 
             skeets_metadata = dict(
                 map(
@@ -99,6 +99,11 @@ class SkeetsGetter:
                             "reply_to": x[1].reply.parent.author.handle if hasattr(x[1], "reply") else [],
                             "created_at": x[1].record.created_at,
                             "account_creation": x[1].author.created_at,
+                            "account_followers": self.profiles_cache[x[1].author.did].followers_count,
+                            "account_following": self.profiles_cache[x[1].author.did].follows_count,
+                            "account_statuses": self.profiles_cache[x[1].author.did].posts_count,
+                            "account_description": self.profiles_cache[x[1].author.did].description,
+                            "account_verified": x[1].author.verification is not None and x[1].author.verification.verified_status == "valid",
                         },
                     ),
                     user_skeets.items(),
