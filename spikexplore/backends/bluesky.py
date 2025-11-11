@@ -51,7 +51,7 @@ class SkeetsGetter:
                 return p
         except Exception as e:
             logger.error("Error in getting profile: ", e)
-        
+
         return None
 
     def facet_data(self, skeet, data):
