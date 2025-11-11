@@ -60,9 +60,9 @@ class SkeetsGetter:
         if skeets is not None:
             return skeets
         user_skeets_raw = self.bsky_client.get_author_feed(actor=username, limit=self.config.max_skeets_per_user).feed
-            # remove old tweets
+        # remove old tweets
         user_skeets_filt = self._filter_old_skeets(user_skeets_raw)
-        
+
         self.skeets_cache[username] = {x.post.cid: x.post for x in user_skeets_filt}
 
         # update profile cache
@@ -90,7 +90,7 @@ class SkeetsGetter:
 
         # Test if ok
         try:
-            
+
             user_skeets = self.get_skeets(username)
 
             skeets_metadata = dict(
