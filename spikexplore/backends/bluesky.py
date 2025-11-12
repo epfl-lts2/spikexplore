@@ -52,8 +52,8 @@ class SkeetsGetter:
                 return p
         except BadRequestError as e:
             logger.error(f"Error in getting profile: code {e.response.status_code} - {e.response.content.message}")
-            self.profiles_cache[did] = None # fill the cache to avoid retrying
-        except Exception as e:  
+            self.profiles_cache[did] = None  # fill the cache to avoid retrying
+        except Exception as e:
             logger.error("Error in getting profile: ", e)
 
         return None
@@ -75,8 +75,8 @@ class SkeetsGetter:
                     self.profiles_cache[v[1].author.did] = self.bsky_client.get_profile(v[1].author.handle)
                 except BadRequestError as e:
                     logger.error(f"Error in getting profile: code {e.response.status_code} - {e.response.content.message}")
-                    self.profiles_cache[v[1].author.did] = None # fill the cache to avoid retrying
-    
+                    self.profiles_cache[v[1].author.did] = None  # fill the cache to avoid retrying
+
         return self.skeets_cache[username]
 
     def facet_data(self, skeet, data):
