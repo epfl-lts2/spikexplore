@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "spikexplore"
-version = "0.2.0"
+version = "0.2.2"
 authors = [
     {name = "Nicolas Aspert", email = "nicolas.aspert@epfl.ch"},
     {name = "Benjamin Ricaud", email = "benjamin.ricaud@uit.no"},
@@ -16,12 +16,12 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: Apache License",
     "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.8",
 ]
 urls = {Homepage = "https://gitlab.switch.ch/imi-sad/spikexplore"}
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
     "pandas",
     "numpy",

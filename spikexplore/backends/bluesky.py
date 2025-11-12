@@ -135,6 +135,12 @@ class SkeetsGetter:
                 "name",
                 "spikyball_hop",
                 "created_at",
+                "account_creation",
+                "account_followers",
+                "account_following",
+                "account_statuses",
+                "account_description",
+                "account_verified",
             ]
         ]
         node_df = node_df.reset_index().groupby("user").max().rename(columns={"index": "last_skeet_id"})
