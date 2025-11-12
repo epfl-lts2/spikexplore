@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "spikexplore"
-version = "0.2.2"
+version = "0.2.3"
 authors = [
     {name = "Nicolas Aspert", email = "nicolas.aspert@epfl.ch"},
     {name = "Benjamin Ricaud", email = "benjamin.ricaud@uit.no"},
